@@ -15,7 +15,7 @@ import {
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/assistant', label: 'AI Assistant', icon: Sparkles, badge: 'Agentic' },
+  { path: '/assistant', label: 'AI Assistant', icon: Sparkles, badge: 'Agent' },
   { path: '/study-planner', label: 'Study Planner', icon: GraduationCap },
   { path: '/tasks', label: 'Tasks & Deadlines', icon: CheckSquare },
   { path: '/notices', label: 'Notices', icon: Bell },
@@ -43,7 +43,7 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(56, 7, 16, 0.55)',
+            backgroundColor: 'rgba(15, 39, 68, 0.55)',
             zIndex: 90,
             backdropFilter: 'blur(3px)'
           }}
@@ -54,7 +54,7 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
       <aside 
         style={{
           width: '260px',
-          backgroundColor: '#380710',
+          backgroundColor: '#163A63',
           color: '#FFFFFF',
           display: 'flex',
           flexDirection: 'column',
@@ -65,38 +65,38 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
           zIndex: 100,
           borderRight: '1px solid rgba(255, 255, 255, 0.08)',
           transition: 'transform 0.25s ease',
-          boxShadow: '2px 0 12px rgba(56, 7, 16, 0.15)'
+          boxShadow: '2px 0 12px rgba(15, 39, 68, 0.15)'
         }}
         className={isOpen ? 'sidebar-open' : 'sidebar-closed'}
       >
         {/* Brand Header */}
         <div style={{
-          padding: '24px 20px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          padding: '20px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
-              width: '40px',
-              height: '40px',
+              width: '38px',
+              height: '38px',
               borderRadius: '10px',
-              backgroundColor: '#7B1123',
+              backgroundColor: '#2563EB',
               border: '1px solid rgba(255, 255, 255, 0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(123, 17, 35, 0.4)'
+              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.4)'
             }}>
-              <Sparkles size={22} color="#FFFFFF" />
+              <Sparkles size={20} color="#FFFFFF" />
             </div>
             <div>
-              <div style={{ fontSize: '18px', fontWeight: '700', letterSpacing: '-0.02em', color: '#FFFFFF' }}>
-                CampusMate <span style={{ color: '#F3CCD3', fontWeight: '500' }}>AI</span>
+              <div style={{ fontSize: '17px', fontWeight: '700', letterSpacing: '-0.02em', color: '#FFFFFF' }}>
+                CampusMate <span style={{ color: '#93C5FD', fontWeight: '500' }}>AI</span>
               </div>
-              <div style={{ fontSize: '11px', color: '#E5E7EB', opacity: 0.85 }}>
-                Intelligent Companion
+              <div style={{ fontSize: '11px', color: '#BFDBFE', opacity: 0.9 }}>
+                Student Productivity Platform
               </div>
             </div>
           </div>
@@ -123,9 +123,8 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
             fontSize: '11px',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
-            color: '#FFFFFF',
-            opacity: 0.85,
-            padding: '8px 12px 12px 12px',
+            color: '#93C5FD',
+            padding: '4px 12px 10px 12px',
             fontWeight: '700'
           }}>
             Navigation
@@ -149,11 +148,11 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
                     padding: '10px 14px',
                     borderRadius: '8px',
                     textDecoration: 'none',
-                    fontSize: '14px',
+                    fontSize: '13.5px',
                     fontWeight: isActive ? '700' : '500',
-                    color: isActive ? '#7B1123' : '#FFFFFF',
-                    backgroundColor: isActive ? '#FFFFFF' : 'transparent',
-                    boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.2)' : 'none',
+                    color: isActive ? '#163A63' : '#E2E8F0',
+                    backgroundColor: isActive ? '#DBEAFE' : 'transparent',
+                    boxShadow: isActive ? '0 1px 3px rgba(0, 0, 0, 0.12)' : 'none',
                     transition: 'all 0.15s ease'
                   })}
                 >
@@ -163,13 +162,13 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
                   </div>
                   {item.badge && (
                     <span style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.22)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
                       color: '#FFFFFF',
                       fontSize: '10px',
-                      padding: '2px 8px',
+                      padding: '2px 7px',
                       borderRadius: '4px',
                       fontWeight: '700',
-                      letterSpacing: '0.04em'
+                      letterSpacing: '0.03em'
                     }}>
                       {item.badge}
                     </span>
@@ -182,9 +181,9 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
 
         {/* Bottom Profile & Mode Card */}
         <div style={{
-          padding: '16px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-          backgroundColor: 'rgba(0, 0, 0, 0.2)'
+          padding: '14px 16px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: '#0F2744'
         }}>
           {/* Demo Mode / Live Mode Indicator */}
           <div style={{
@@ -195,19 +194,19 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
             border: isDemo ? '1px solid rgba(254, 243, 199, 0.25)' : '1px solid rgba(221, 245, 229, 0.25)',
             padding: '8px 10px',
             borderRadius: '8px',
-            marginBottom: '12px'
+            marginBottom: '10px'
           }}>
             {isDemo ? (
-              <Zap size={15} color="#FDE68A" />
+              <Zap size={14} color="#FDE68A" />
             ) : (
-              <Sparkles size={15} color="#DDF5E5" />
+              <Sparkles size={14} color="#86EFAC" />
             )}
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '11px', fontWeight: '600', color: isDemo ? '#FDE68A' : '#DDF5E5' }}>
-                {isDemo ? 'Autonomous Agent (Demo)' : 'Live AI Agent Connected'}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: isDemo ? '#FDE68A' : '#86EFAC', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isDemo ? 'Autonomous Agent' : 'Live AI Agent Connected'}
               </div>
-              <div style={{ fontSize: '10px', color: '#E5E7EB', opacity: 0.9 }}>
-                {isDemo ? 'Tool calls active on SQLite' : 'External LLM API active'}
+              <div style={{ fontSize: '10px', color: '#93C5FD', opacity: 0.9 }}>
+                {isDemo ? 'Local SQLite Database' : 'External LLM API active'}
               </div>
             </div>
           </div>
@@ -215,26 +214,26 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
           {/* Student Profile Card */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              width: '36px',
-              height: '36px',
+              width: '34px',
+              height: '34px',
               borderRadius: '50%',
-              backgroundColor: '#FDF2F4',
-              color: '#7B1123',
-              border: '2px solid rgba(255, 255, 255, 0.4)',
+              backgroundColor: '#DBEAFE',
+              color: '#163A63',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: '700',
-              fontSize: '13px',
+              fontSize: '12px',
               flexShrink: 0
             }}>
               {getInitials(userSettings?.student_name)}
             </div>
-            <div style={{ overflow: 'hidden' }}>
+            <div style={{ overflow: 'hidden', minWidth: 0 }}>
               <div style={{ fontSize: '13px', fontWeight: '600', color: '#FFFFFF', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                 {userSettings?.student_name || 'Alex Chen'}
               </div>
-              <div style={{ fontSize: '11px', color: '#E5E7EB', opacity: 0.9 }}>
+              <div style={{ fontSize: '11px', color: '#93C5FD' }}>
                 {userSettings?.student_id || 'CS-2024-8842'}
               </div>
             </div>

@@ -182,7 +182,7 @@ export default function ClubsEvents() {
         style={{ 
           padding: '20px 24px', 
           backgroundColor: '#FFFFFF',
-          borderLeft: '4px solid var(--primary)',
+          borderLeft: '4px solid #2563EB',
           display: 'flex',
           flexDirection: 'column',
           gap: '12px'
@@ -191,23 +191,23 @@ export default function ClubsEvents() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span className="badge badge-burgundy" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', textTransform: 'uppercase' }}>
+              <span className="badge badge-blue" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', textTransform: 'uppercase' }}>
                 <Building size={12} /> Christ College of Engineering (Autonomous)
               </span>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '12px', color: '#64748B' }}>
                 Irinjalakuda, Kerala
               </span>
             </div>
-            <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#163A63', margin: 0 }}>
               Campus Events & Student Activities
             </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px', marginBottom: 0 }}>
+            <p style={{ color: '#64748B', fontSize: '13px', marginTop: '2px', marginBottom: 0 }}>
               Official events, workshops, hackathons, and student branch activities synchronized from the college database.
             </p>
           </div>
 
           {/* Sync Button & Status */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
             <button
               onClick={handleManualSync}
               disabled={syncing}
@@ -216,18 +216,18 @@ export default function ClubsEvents() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '8px 16px',
-                fontSize: '13px',
+                padding: '7px 14px',
+                fontSize: '12.5px',
                 cursor: syncing ? 'not-allowed' : 'pointer'
               }}
             >
-              <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+              <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
               {syncing ? 'Synchronizing with CCE...' : 'Sync with CCE Portal'}
             </button>
 
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'right' }}>
+            <div style={{ fontSize: '11px', color: '#64748B', textAlign: 'right' }}>
               <span>Database status: </span>
-              <strong style={{ color: 'var(--primary-dark)' }}>
+              <strong style={{ color: '#163A63' }}>
                 {syncData.last_synced_at || 'Connected'}
               </strong>
             </div>
@@ -240,7 +240,7 @@ export default function ClubsEvents() {
             style={{
               padding: '10px 14px',
               borderRadius: '8px',
-              fontSize: '13px',
+              fontSize: '12.5px',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
@@ -255,28 +255,28 @@ export default function ClubsEvents() {
         )}
 
         {/* Official Sources Citation Bar */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', paddingTop: '10px', borderTop: '1px solid var(--border-color)', fontSize: '12px', color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', paddingTop: '10px', borderTop: '1px solid #DCE5F0', fontSize: '12px', color: '#64748B' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Globe size={13} color="var(--primary)" />
+            <Globe size={13} color="#2563EB" />
             <span>Official Portal: </span>
             <a 
               href="https://cce.edu.in/" 
               target="_blank" 
               rel="noreferrer" 
-              style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+              style={{ color: '#2563EB', fontWeight: '600', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
             >
               cce.edu.in <ExternalLink size={11} />
             </a>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Globe size={13} color="var(--primary)" />
+            <Globe size={13} color="#2563EB" />
             <span>IEEE Student Branch: </span>
             <a 
               href="https://cce.edu.in/student_services/ieee" 
               target="_blank" 
               rel="noreferrer" 
-              style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+              style={{ color: '#2563EB', fontWeight: '600', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
             >
               cce.edu.in/student_services/ieee <ExternalLink size={11} />
             </a>
@@ -286,17 +286,17 @@ export default function ClubsEvents() {
 
       {/* Navigation Tabs (Upcoming vs Past vs Clubs) */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', backgroundColor: 'var(--bg-subtle)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', backgroundColor: '#F1F5F9', padding: '4px', borderRadius: '8px', border: '1px solid #DCE5F0' }}>
           <button
             onClick={() => setActiveTab('upcoming')}
             style={{
-              padding: '8px 18px',
+              padding: '7px 16px',
               borderRadius: '6px',
               border: 'none',
               fontSize: '13px',
-              fontWeight: activeTab === 'upcoming' ? '600' : '500',
+              fontWeight: activeTab === 'upcoming' ? '700' : '500',
               backgroundColor: activeTab === 'upcoming' ? '#FFFFFF' : 'transparent',
-              color: activeTab === 'upcoming' ? 'var(--primary-dark)' : 'var(--text-secondary)',
+              color: activeTab === 'upcoming' ? '#163A63' : '#64748B',
               boxShadow: activeTab === 'upcoming' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
               cursor: 'pointer'
             }}
@@ -307,13 +307,13 @@ export default function ClubsEvents() {
           <button
             onClick={() => setActiveTab('past')}
             style={{
-              padding: '8px 18px',
+              padding: '7px 16px',
               borderRadius: '6px',
               border: 'none',
               fontSize: '13px',
-              fontWeight: activeTab === 'past' ? '600' : '500',
+              fontWeight: activeTab === 'past' ? '700' : '500',
               backgroundColor: activeTab === 'past' ? '#FFFFFF' : 'transparent',
-              color: activeTab === 'past' ? 'var(--primary-dark)' : 'var(--text-secondary)',
+              color: activeTab === 'past' ? '#163A63' : '#64748B',
               boxShadow: activeTab === 'past' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
               cursor: 'pointer'
             }}
@@ -324,13 +324,13 @@ export default function ClubsEvents() {
           <button
             onClick={() => setActiveTab('clubs')}
             style={{
-              padding: '8px 18px',
+              padding: '7px 16px',
               borderRadius: '6px',
               border: 'none',
               fontSize: '13px',
-              fontWeight: activeTab === 'clubs' ? '600' : '500',
+              fontWeight: activeTab === 'clubs' ? '700' : '500',
               backgroundColor: activeTab === 'clubs' ? '#FFFFFF' : 'transparent',
-              color: activeTab === 'clubs' ? 'var(--primary-dark)' : 'var(--text-secondary)',
+              color: activeTab === 'clubs' ? '#163A63' : '#64748B',
               boxShadow: activeTab === 'clubs' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
               cursor: 'pointer'
             }}
@@ -350,10 +350,10 @@ export default function ClubsEvents() {
                 style={{
                   padding: '6px 14px',
                   fontSize: '12px',
-                  backgroundColor: selectedCategory === cat ? 'var(--primary-subtle)' : '#FFFFFF',
-                  color: selectedCategory === cat ? 'var(--primary)' : 'var(--text-secondary)',
-                  borderColor: selectedCategory === cat ? 'var(--primary)' : 'var(--border-color)',
-                  fontWeight: selectedCategory === cat ? '600' : '400'
+                  backgroundColor: selectedCategory === cat ? '#DBEAFE' : '#FFFFFF',
+                  color: selectedCategory === cat ? '#163A63' : '#64748B',
+                  borderColor: selectedCategory === cat ? '#2563EB' : '#DCE5F0',
+                  fontWeight: selectedCategory === cat ? '700' : '500'
                 }}
               >
                 {cat}
@@ -371,8 +371,8 @@ export default function ClubsEvents() {
           gap: '20px'
         }}>
           {loading ? (
-            <div style={{ padding: '40px', gridColumn: '1 / -1', textAlign: 'center', color: 'var(--text-secondary)' }}>
-              <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 12px auto', color: 'var(--primary)' }} />
+            <div style={{ padding: '40px', gridColumn: '1 / -1', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>
+              <RefreshCw size={22} className="animate-spin" style={{ margin: '0 auto 10px auto', color: '#2563EB' }} />
               Loading verified events from Christ College of Engineering...
             </div>
           ) : events.length === 0 ? (
@@ -401,6 +401,7 @@ export default function ClubsEvents() {
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
+                    padding: '20px',
                     opacity: isPast ? 0.92 : 1,
                     position: 'relative'
                   }}
@@ -409,22 +410,22 @@ export default function ClubsEvents() {
                     {/* Top Row: Club & Status Badges */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', gap: '8px' }}>
                       <div>
-                        <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           {event.organizer || event.club_name}
                         </span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                          <span className="badge badge-grey" style={{ fontSize: '10px' }}>
+                          <span className="badge badge-neutral" style={{ fontSize: '10px' }}>
                             {event.category}
                           </span>
                           {event.is_sample && (
-                            <span className="badge badge-demo">Demo</span>
+                            <span className="badge badge-demo" style={{ fontSize: '9.5px', padding: '1px 5px' }}>Demo</span>
                           )}
                           {event.is_upcoming ? (
-                            <span className="badge badge-burgundy" style={{ fontSize: '10px' }}>
+                            <span className="badge badge-blue" style={{ fontSize: '10px' }}>
                               Upcoming
                             </span>
                           ) : (
-                            <span className="badge badge-grey" style={{ fontSize: '10px' }}>
+                            <span className="badge badge-neutral" style={{ fontSize: '10px' }}>
                               Past Event
                             </span>
                           )}
@@ -447,7 +448,7 @@ export default function ClubsEvents() {
                             borderRadius: '6px'
                           }}
                         >
-                          <ShieldCheck size={12} /> Verified Source
+                          <ShieldCheck size={12} /> Verified
                         </span>
                       ) : (
                         <span 
@@ -470,30 +471,30 @@ export default function ClubsEvents() {
                     </div>
 
                     {/* Event Title */}
-                    <h4 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--primary-dark)', marginBottom: '10px', lineHeight: 1.35 }}>
+                    <h4 style={{ fontSize: '15.5px', fontWeight: '700', color: '#163A63', marginBottom: '8px', lineHeight: 1.35 }}>
                       {event.title}
                     </h4>
 
                     {/* Logistics Details */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Calendar size={13} color="var(--primary)" /> 
-                        <strong style={{ color: 'var(--text-primary)' }}>{event.date}</strong> &bull; {event.time || "Schedule Announced by Organizer"}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '12px', color: '#64748B', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                        <Calendar size={13} color="#2563EB" /> 
+                        <strong style={{ color: '#172B4D' }}>{event.date}</strong> &bull; {event.time || "Schedule Announced by Organizer"}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <MapPin size={13} color="var(--text-secondary)" /> 
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                        <MapPin size={13} color="#64748B" /> 
                         <span>{event.venue || event.location || "Christ College of Engineering, Irinjalakuda"}</span>
                       </div>
                       {event.registration_deadline && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#991B1B', fontWeight: '500' }}>
-                          <Clock size={13} color="#991B1B" /> 
-                          <span>Registration Deadline: <strong>{event.registration_deadline}</strong></span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#D97706', fontWeight: '500' }}>
+                          <Clock size={13} color="#D97706" /> 
+                          <span>Deadline: <strong>{event.registration_deadline}</strong></span>
                         </div>
                       )}
                     </div>
 
                     {/* Description */}
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '14px' }}>
+                    <p style={{ fontSize: '12.5px', color: '#64748B', lineHeight: 1.5, marginBottom: '14px' }}>
                       {event.description}
                     </p>
                   </div>
@@ -502,10 +503,10 @@ export default function ClubsEvents() {
                     {/* Official Source Attribution Link */}
                     <div style={{ 
                       padding: '8px 10px', 
-                      backgroundColor: 'var(--bg-subtle)', 
+                      backgroundColor: '#F8FAFC', 
                       borderRadius: '6px', 
                       fontSize: '11px', 
-                      color: 'var(--text-secondary)',
+                      color: '#64748B',
                       marginBottom: '12px',
                       display: 'flex',
                       justifyContent: 'space-between',
@@ -517,12 +518,12 @@ export default function ClubsEvents() {
                           href={event.source_url} 
                           target="_blank" 
                           rel="noreferrer" 
-                          style={{ color: 'var(--primary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: '600' }}
+                          style={{ color: '#2563EB', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: '600' }}
                         >
                           View Official Link <ExternalLink size={10} />
                         </a>
                       ) : (
-                        <span style={{ color: 'var(--text-secondary)' }}>Internal Notice</span>
+                        <span style={{ color: '#94A3B8' }}>Internal Notice</span>
                       )}
                     </div>
 
@@ -532,9 +533,9 @@ export default function ClubsEvents() {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       paddingTop: '12px',
-                      borderTop: '1px solid var(--border-color)'
+                      borderTop: '1px solid #DCE5F0'
                     }}>
-                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      <span style={{ fontSize: '11.5px', color: '#64748B' }}>
                         {event.is_registered 
                           ? "✓ Scheduled on your Student Calendar" 
                           : (event.registration_link ? "Official Link Available" : "CCE Student Entry")}
@@ -548,15 +549,15 @@ export default function ClubsEvents() {
                             rel="noreferrer"
                             className="btn-secondary"
                             style={{
-                              padding: '6px 12px',
-                              fontSize: '12px',
+                              padding: '5px 10px',
+                              fontSize: '11.5px',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
                               textDecoration: 'none'
                             }}
                           >
-                            <ExternalLink size={12} /> Register Link
+                            <ExternalLink size={11} /> Register Link
                           </a>
                         )}
 
@@ -564,9 +565,9 @@ export default function ClubsEvents() {
                           onClick={() => handleToggleRegister(event.id)}
                           className={event.is_registered ? "btn-secondary" : "btn-primary"}
                           style={{
-                            padding: '6px 12px',
-                            fontSize: '12px',
-                            backgroundColor: event.is_registered ? '#DCFCE7' : 'var(--primary)',
+                            padding: '5px 12px',
+                            fontSize: '11.5px',
+                            backgroundColor: event.is_registered ? '#DCFCE7' : '#2563EB',
                             color: event.is_registered ? '#166534' : '#FFFFFF',
                             borderColor: event.is_registered ? '#BBF7D0' : 'transparent',
                             display: 'inline-flex',
@@ -576,11 +577,11 @@ export default function ClubsEvents() {
                         >
                           {event.is_registered ? (
                             <>
-                              <Check size={13} /> RSVP Confirmed
+                              <Check size={12} /> RSVP Confirmed
                             </>
                           ) : (
                             <>
-                              <Ticket size={13} /> RSVP to Schedule
+                              <Ticket size={12} /> RSVP to Schedule
                             </>
                           )}
                         </button>
@@ -599,38 +600,38 @@ export default function ClubsEvents() {
             <div key={idx} className="campus-card" style={{ padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <span className="badge badge-burgundy">{club.category}</span>
+                  <span className="badge badge-blue">{club.category}</span>
                   <span style={{ fontSize: '11px', color: '#166534', fontWeight: '600', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '4px' }}>
                     Active Official Body
                   </span>
                 </div>
 
-                <h4 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--primary-dark)', marginBottom: '8px' }}>
+                <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#163A63', marginBottom: '6px' }}>
                   {club.name}
                 </h4>
 
-                <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: '600', marginBottom: '4px' }}>
+                <div style={{ fontSize: '12px', color: '#2563EB', fontWeight: '600', marginBottom: '4px' }}>
                   {club.lead}
                 </div>
 
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '12px' }}>
                   🗓️ {club.meets}
                 </div>
 
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '16px' }}>
+                <p style={{ fontSize: '12.5px', color: '#64748B', lineHeight: 1.5, marginBottom: '16px' }}>
                   {club.description}
                 </p>
               </div>
 
-              <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Official Publication:</span>
+              <div style={{ paddingTop: '12px', borderTop: '1px solid #DCE5F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', color: '#64748B' }}>Official Publication:</span>
                 <a
                   href={club.officialSource}
                   target="_blank"
                   rel="noreferrer"
-                  style={{ fontSize: '12px', color: 'var(--primary)', textDecoration: 'none', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  style={{ fontSize: '12px', color: '#2563EB', textDecoration: 'none', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                 >
-                  Visit Club Page <ExternalLink size={12} />
+                  Visit Club Page <ExternalLink size={11} />
                 </a>
               </div>
             </div>

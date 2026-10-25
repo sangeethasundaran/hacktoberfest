@@ -11,14 +11,19 @@ import {
   AlertCircle, 
   BookOpen, 
   Users, 
-  Check,
-  TrendingUp,
-  BarChart2,
-  Upload,
-  Download,
-  Info,
-  Layers,
-  FileSpreadsheet
+  Check, 
+  TrendingUp, 
+  BarChart2, 
+  Upload, 
+  Download, 
+  Info, 
+  Layers, 
+  FileSpreadsheet, 
+  GraduationCap, 
+  Building, 
+  ExternalLink,
+  Send,
+  X
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -27,20 +32,22 @@ import {
   XAxis, 
   YAxis, 
   Tooltip, 
-  CartesianGrid,
-  AreaChart,
-  Area
+  CartesianGrid 
 } from 'recharts';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
+  const [userSettings, setUserSettings] = useState(null);
   
   // Modals
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+  // Quick prompt input
+  const [quickPrompt, setQuickPrompt] = useState('');
 
   // Quick Task Form
   const [newTask, setNewTask] = useState({
@@ -70,10 +77,18 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/dashboard');
-      if (res.ok) {
-        const data = await res.json();
+      const [dashRes, settingsRes] = await Promise.all([
+        fetch('/api/dashboard'),
+        fetch('/api/settings').catch(() => null)
+      ]);
+
+      if (dashRes.ok) {
+        const data = await dashRes.json();
         setStats(data);
+      }
+      if (settingsRes?.ok) {
+        const sData = await settingsRes.json();
+        setUserSettings(sData);
       }
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
@@ -159,707 +174,621 @@ export default function Dashboard() {
     }
   };
 
-  const handleFileUpload = async (e) => {
+  const handleImportSubmit = async (e) => {
     e.preventDefault();
     if (!importFile) return;
-
-    setImporting(true);
-    setImportFeedback(null);
     try {
+      setImporting(true);
+      setImportFeedback(null);
       const formData = new FormData();
       formData.append('file', importFile);
-
       const res = await fetch('/api/tasks/import-file', {
         method: 'POST',
         body: formData
       });
-
       const data = await res.json();
       if (res.ok) {
-        setImportFeedback({ type: 'success', message: data.message || `Successfully imported ${data.count} items!` });
+        setImportFeedback({ type: 'success', text: data.message });
         setImportFile(null);
-        setTimeout(() => {
-          setShowImportModal(false);
-          setImportFeedback(null);
-          fetchDashboardData();
-        }, 1500);
+        fetchDashboardData();
+        setTimeout(() => setShowImportModal(false), 1400);
       } else {
-        setImportFeedback({ type: 'error', message: data.detail || 'Failed to parse file.' });
+        setImportFeedback({ type: 'error', text: data.detail || 'Import failed.' });
       }
     } catch (err) {
-      setImportFeedback({ type: 'error', message: 'Network error uploading file.' });
+      setImportFeedback({ type: 'error', text: err.message });
     } finally {
       setImporting(false);
     }
   };
 
-  const getDeadlineBadge = (dueDate, status) => {
-    if (status === 'Completed') {
-      return <span className="badge badge-success"><Check size={11} /> Completed</span>;
-    }
-    const today = new Date().toISOString().split('T')[0];
-    if (dueDate < today) {
-      return <span className="badge badge-error">Overdue</span>;
-    } else if (dueDate === today) {
-      return <span className="badge badge-warning">Due Today</span>;
-    } else {
-      return <span className="badge badge-burgundy">Due Soon</span>;
-    }
+  const handleQuickPromptSubmit = (e) => {
+    e.preventDefault();
+    if (!quickPrompt.trim()) return;
+    navigate(`/assistant?prompt=${encodeURIComponent(quickPrompt.trim())}`);
   };
 
-  if (loading && !stats) {
-    return (
-      <div style={{ padding: '80px 0', textAlign: 'center', color: '#6B7280' }}>
-        <Sparkles size={34} color="#7B1123" className="animate-spin" style={{ margin: '0 auto 16px' }} />
-        <div style={{ fontSize: '16px', fontWeight: '600', color: '#4A0E17' }}>Loading your campus workspace...</div>
-        <div style={{ fontSize: '13px', color: '#9CA3AF', marginTop: '4px' }}>Connecting to database</div>
-      </div>
-    );
-  }
+  const studentName = userSettings?.student_name || 'Student';
 
-  const weeklyData = stats?.weekly_velocity || [];
-  const workloadData = stats?.course_workload || [];
-  const hasVelocityData = weeklyData.some(d => d.actual > 0 || d.target > 0);
-  const hasWorkloadData = workloadData.length > 0;
+  // Greeting based on time of day
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : (hour < 17 ? 'Good afternoon' : 'Good evening');
+
+  const pendingCount = stats?.pending_tasks ?? 0;
+  const upcomingDeadlinesCount = stats?.urgent_deadlines?.length ?? 0;
+  const eventsCount = stats?.upcoming_events_count ?? 0;
+  const studyProgressCount = stats?.completed_tasks ?? 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '26px' }}>
-      
-      {/* Sample Demo Data Notice (if any demo items exist in DB) */}
-      {stats?.has_sample_data && (
-        <div style={{
-          backgroundColor: '#FFFBEB',
-          border: '1px solid #FDE68A',
-          borderRadius: '10px',
-          padding: '12px 18px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span className="badge badge-demo">Sample Mode</span>
-            <span style={{ fontSize: '13px', color: '#92400E' }}>
-              Demonstration records are visible and labeled. You can upload your actual syllabus/timetable or clear sample records in Settings.
-            </span>
-          </div>
-          <button 
-            onClick={() => navigate('/settings')}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: '#92400E', 
-              fontSize: '12px', 
-              fontWeight: '600', 
-              cursor: 'pointer',
-              textDecoration: 'underline'
-            }}
-          >
-            Manage Data
-          </button>
-        </div>
-      )}
-
-      {/* Top Banner / Greeting */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
-        <div>
-          <h2 style={{ fontSize: '26px', fontWeight: '700', color: '#4A0E17', letterSpacing: '-0.02em', margin: 0 }}>
-            {stats?.greeting || "Good morning! Ready to make today productive?"}
-          </h2>
-          <p style={{ color: '#6B7280', fontSize: '14px', marginTop: '4px', marginBottom: 0 }}>
-            Real-time academic snapshot and schedule grounded in your database.
-          </p>
-        </div>
-
-        {/* Quick Action Buttons in Burgundy & Grey */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <button 
-            className="btn-primary" 
-            onClick={() => setShowTaskModal(true)}
-          >
-            <Plus size={16} /> Add Task
-          </button>
-          <button 
-            className="btn-secondary"
-            onClick={() => setShowImportModal(true)}
-            title="Import assignments or exam timetable from CSV, Excel, or PDF"
-          >
-            <Upload size={16} color="#7B1123" /> Import File
-          </button>
-          <button 
-            className="btn-secondary"
-            onClick={() => setShowScheduleModal(true)}
-          >
-            <Clock size={16} color="#7B1123" /> Add Schedule Block
-          </button>
-          <button 
-            className="btn-primary" 
-            style={{ backgroundColor: '#4A0E17' }}
-            onClick={() => navigate('/assistant')}
-          >
-            <Sparkles size={16} /> Ask AI Agent
-          </button>
-        </div>
-      </div>
-
-      {/* 4 Statistics Cards */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* =========================================================================
+          TOP SECTION: Welcome & Campus Info Card
+          ========================================================================= */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-        gap: '18px'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+        gap: '16px',
+        alignItems: 'stretch'
       }}>
-        {/* Card 1: Pending Tasks */}
-        <div className="campus-card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{
-            width: '50px',
-            height: '50px',
-            borderRadius: '12px',
-            backgroundColor: '#FDF2F4',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#7B1123',
-            flexShrink: 0
-          }}>
-            <CheckSquare size={24} />
-          </div>
+        {/* Welcome Card */}
+        <div className="campus-card" style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: '13px', color: '#6B7280', fontWeight: '500' }}>Active Deadlines</div>
-            <div style={{ fontSize: '28px', fontWeight: '700', color: '#4A0E17', lineHeight: 1.2 }}>
-              {stats?.pending_tasks ?? 0}
-            </div>
-            <div style={{ fontSize: '11px', color: '#7B1123', marginTop: '2px', fontWeight: '600' }}>
-              Database verified
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Upcoming Exams */}
-        <div className="campus-card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{
-            width: '50px',
-            height: '50px',
-            borderRadius: '12px',
-            backgroundColor: '#FFFBEB',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#B45309',
-            flexShrink: 0
-          }}>
-            <AlertCircle size={24} />
-          </div>
-          <div>
-            <div style={{ fontSize: '13px', color: '#6B7280', fontWeight: '500' }}>Scheduled Exams</div>
-            <div style={{ fontSize: '28px', fontWeight: '700', color: '#4A0E17', lineHeight: 1.2 }}>
-              {stats?.upcoming_exams ?? 0}
-            </div>
-            <div style={{ fontSize: '11px', color: '#B45309', marginTop: '2px', fontWeight: '500' }}>
-              {stats?.upcoming_exams > 0 ? "Revision roadmaps active" : "No pending exams"}
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Completed Tasks */}
-        <div className="campus-card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{
-            width: '50px',
-            height: '50px',
-            borderRadius: '12px',
-            backgroundColor: '#ECFDF5',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#065F46',
-            flexShrink: 0
-          }}>
-            <CheckCircle2 size={24} />
-          </div>
-          <div>
-            <div style={{ fontSize: '13px', color: '#6B7280', fontWeight: '500' }}>Completed Tasks</div>
-            <div style={{ fontSize: '28px', fontWeight: '700', color: '#4A0E17', lineHeight: 1.2 }}>
-              {stats?.completed_tasks ?? 0}
-            </div>
-            <div style={{ fontSize: '11px', color: '#065F46', marginTop: '2px', fontWeight: '500' }}>
-              Logged achievements
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Upcoming Events (Genuine) */}
-        <div className="campus-card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{
-            width: '50px',
-            height: '50px',
-            borderRadius: '12px',
-            backgroundColor: '#F3F4F6',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#374151',
-            flexShrink: 0
-          }}>
-            <Users size={24} />
-          </div>
-          <div>
-            <div style={{ fontSize: '13px', color: '#6B7280', fontWeight: '500' }}>Upcoming Events</div>
-            <div style={{ fontSize: '28px', fontWeight: '700', color: '#4A0E17', lineHeight: 1.2 }}>
-              {stats?.upcoming_events ?? 0}
-            </div>
-            <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px', fontWeight: '500' }}>
-              Official CCE Portal
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* AI Recommendation Banner */}
-      {stats?.ai_recommendation && (
-        <div style={{
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #DCE0E5',
-          borderLeft: '4px solid #7B1123',
-          borderRadius: '12px',
-          padding: '20px 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px',
-          boxShadow: 'var(--shadow-sm)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1 }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              backgroundColor: '#FDF2F4',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#7B1123',
-              flexShrink: 0
-            }}>
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '14px', fontWeight: '700', color: '#4A0E17' }}>
-                  AI Academic Recommendation
-                </span>
-                <span className="badge badge-burgundy">
-                  {stats.ai_recommendation.action_type}
-                </span>
-              </div>
-              <p style={{ fontSize: '14px', color: '#1F2937', margin: 0, lineHeight: 1.5 }}>
-                {stats.ai_recommendation.recommendation}
-              </p>
-            </div>
+            <h1 style={{ fontSize: '23px', fontWeight: '800', color: '#163A63', marginBottom: '6px' }}>
+              {greeting}, {studentName}!
+            </h1>
+            <p style={{ color: '#64748B', fontSize: '13.5px', lineHeight: 1.5, margin: 0 }}>
+              Here is your academic snapshot and prioritized schedule grounded directly in your database.
+            </p>
           </div>
 
-          <button 
-            className="btn-primary"
-            onClick={() => navigate(`/assistant?prompt=${encodeURIComponent("Help me act on this recommendation: " + stats.ai_recommendation.recommendation)}`)}
-          >
-            Ask CampusMate <ArrowRight size={15} />
-          </button>
-        </div>
-      )}
-
-      {/* Main Grid: Today's Schedule & Upcoming Deadlines */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(440px, 1fr))',
-        gap: '24px'
-      }}>
-        {/* Left Column: Today's Schedule */}
-        <div className="campus-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Clock size={20} color="#7B1123" />
-              <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#4A0E17', margin: 0 }}>
-                Today's Schedule
-              </h3>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <a
-                href="/api/schedule/export.ics"
-                download="campusmate_schedule.ics"
-                className="btn-secondary"
-                style={{ padding: '5px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none' }}
-                title="Export schedule to calendar (.ics)"
-              >
-                <Calendar size={13} color="#7B1123" /> Export .ics
-              </a>
-              <button 
-                onClick={() => setShowScheduleModal(true)}
-                className="btn-secondary"
-                style={{ padding: '5px 10px', fontSize: '12px' }}
-              >
-                <Plus size={13} /> Add Block
-              </button>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {(!stats?.today_schedule || stats.today_schedule.length === 0) ? (
-              <div style={{ 
-                padding: '36px 20px', 
-                textAlign: 'center', 
-                backgroundColor: '#F9FAFB', 
-                borderRadius: '8px', 
-                border: '1px dashed #D1D5DB' 
-              }}>
-                <Clock size={28} color="#9CA3AF" style={{ margin: '0 auto 10px' }} />
-                <div style={{ fontSize: '14px', fontWeight: '600', color: '#4A0E17' }}>
-                  No classes or study sessions scheduled for today
-                </div>
-                <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px', maxWidth: '360px', margin: '4px auto 14px' }}>
-                  You have a clean schedule! Relax or add a scheduled study block to stay on track.
-                </div>
-                <button 
-                  className="btn-primary" 
-                  style={{ fontSize: '13px', padding: '8px 16px' }}
-                  onClick={() => setShowScheduleModal(true)}
-                >
-                  <Plus size={14} /> Schedule a Time Block
-                </button>
-              </div>
-            ) : (
-              stats.today_schedule.map((item) => (
-                <div 
-                  key={item.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '12px 14px',
-                    borderRadius: '8px',
-                    backgroundColor: item.is_completed ? '#F9FAFB' : '#FFFFFF',
-                    border: '1px solid #DCE0E5',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                    <button
-                      onClick={() => handleToggleSchedule(item.id)}
-                      style={{
-                        width: '22px',
-                        height: '22px',
-                        borderRadius: '6px',
-                        border: item.is_completed ? 'none' : '2px solid #D1D5DB',
-                        backgroundColor: item.is_completed ? '#166534' : 'transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        flexShrink: 0
-                      }}
-                      aria-label="Toggle completion"
-                    >
-                      {item.is_completed && <Check size={14} color="#FFFFFF" />}
-                    </button>
-                    <div>
-                      <div style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: item.is_completed ? '#9CA3AF' : '#1F2937',
-                        textDecoration: item.is_completed ? 'line-through' : 'none'
-                      }}>
-                        {item.title}
-                        {item.is_sample && (
-                          <span className="badge badge-demo" style={{ marginLeft: '8px', fontSize: '9px', padding: '1px 5px' }}>
-                            Demo
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#6B7280' }}>
-                        {item.start_time} - {item.end_time} &bull; {item.location}
-                      </div>
-                    </div>
-                  </div>
-
-                  <span className={`badge ${
-                    item.category === 'Class' ? 'badge-burgundy' :
-                    item.category === 'Lab' ? 'badge-grey' :
-                    item.category === 'Study' ? 'badge-warning' : 'badge-grey'
-                  }`}>
-                    {item.category}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Right Column: Upcoming Deadlines */}
-        <div className="campus-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Calendar size={20} color="#7B1123" />
-              <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#4A0E17', margin: 0 }}>
-                Upcoming Deadlines
-              </h3>
-            </div>
-            <button 
-              className="btn-tertiary"
-              onClick={() => navigate('/tasks')}
-              style={{ padding: 0 }}
-            >
-              View All <ArrowRight size={14} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '18px', flexWrap: 'wrap' }}>
+            <button className="btn-primary" onClick={() => setShowTaskModal(true)}>
+              <Plus size={15} /> Add Task
+            </button>
+            <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
+              <Upload size={14} /> Import File
+            </button>
+            <button className="btn-secondary" onClick={() => setShowScheduleModal(true)}>
+              <Calendar size={14} /> Add Block
             </button>
           </div>
+        </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {(!stats?.deadlines || stats.deadlines.length === 0) ? (
-              <div style={{ 
-                padding: '36px 20px', 
-                textAlign: 'center', 
-                backgroundColor: '#F9FAFB', 
-                borderRadius: '8px', 
-                border: '1px dashed #D1D5DB' 
-              }}>
-                <CheckCircle2 size={28} color="#065F46" style={{ margin: '0 auto 10px' }} />
-                <div style={{ fontSize: '14px', fontWeight: '600', color: '#4A0E17' }}>
-                  No pending deadlines recorded!
+        {/* Compact Campus Information Card */}
+        <div className="campus-card" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderLeft: '4px solid #2563EB' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Building size={15} color="#2563EB" />
+                <span style={{ fontSize: '12px', fontWeight: '700', color: '#163A63', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Christ College of Engineering (Autonomous)
+                </span>
+              </div>
+              <span className="badge badge-success" style={{ fontSize: '10.5px' }}>
+                Verified Portal
+              </span>
+            </div>
+
+            <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0 12px 0', lineHeight: 1.45 }}>
+              Department of {userSettings?.major || 'Computer Science & Engineering'} &bull; {userSettings?.semester || 'Semester 5'}
+            </p>
+
+            <div style={{ fontSize: '12.5px', color: '#172B4D', backgroundColor: '#EFF6FF', padding: '10px 12px', borderRadius: '8px', border: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Info size={15} color="#2563EB" style={{ flexShrink: 0 }} />
+              <span>Official circulars, attendance thresholds (75%), and exam guidelines are indexed.</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #DCE5F0' }}>
+            <span style={{ fontSize: '12px', color: '#64748B' }}>Source: cce.edu.in</span>
+            <button 
+              onClick={() => navigate('/campus-info')}
+              className="btn-tertiary"
+              style={{ padding: 0, fontSize: '12px' }}
+            >
+              Search Regulations &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          OVERVIEW CARDS (4 Compact Metrics)
+          ========================================================================= */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: '16px'
+      }}>
+        {/* 1. Pending Assignments */}
+        <div 
+          className="campus-card" 
+          onClick={() => navigate('/tasks')}
+          style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px' }}
+        >
+          <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB', flexShrink: 0 }}>
+            <CheckSquare size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Pending Tasks
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: '#163A63', lineHeight: 1.2, marginTop: '2px' }}>
+              {pendingCount}
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+              Active coursework items
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Upcoming Deadlines */}
+        <div 
+          className="campus-card" 
+          onClick={() => navigate('/tasks')}
+          style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px' }}
+        >
+          <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D97706', flexShrink: 0 }}>
+            <Clock size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Upcoming Deadlines
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: '#B45309', lineHeight: 1.2, marginTop: '2px' }}>
+              {upcomingDeadlinesCount}
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+              Due within 7 days
+            </div>
+          </div>
+        </div>
+
+        {/* 3. College Events */}
+        <div 
+          className="campus-card" 
+          onClick={() => navigate('/clubs-events')}
+          style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px' }}
+        >
+          <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#166534', flexShrink: 0 }}>
+            <Users size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              College Events
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: '#166534', lineHeight: 1.2, marginTop: '2px' }}>
+              {eventsCount}
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+              CCE verified campus activities
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Study Progress */}
+        <div 
+          className="campus-card" 
+          onClick={() => navigate('/study-planner')}
+          style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px' }}
+        >
+          <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1E40AF', flexShrink: 0 }}>
+            <GraduationCap size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Study Progress
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: '#163A63', lineHeight: 1.2, marginTop: '2px' }}>
+              {studyProgressCount}
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+              Tasks completed successfully
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          MAIN CONTENT: Responsive Two-Column Layout
+          ========================================================================= */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
+        gap: '24px',
+        alignItems: 'start'
+      }}>
+        {/* ---------------------------------------------------------------------
+            COLUMN 1: Today's Schedule & Weekly Study Activity
+            --------------------------------------------------------------------- */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Card 1: Today's Schedule */}
+          <div className="campus-card" style={{ padding: '22px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Calendar size={18} color="#2563EB" /> Today's Schedule
+                </h3>
+                <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                  Daily lectures, labs, and focused study blocks
                 </div>
-                <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px', maxWidth: '360px', margin: '4px auto 14px' }}>
-                  You are completely caught up. Upload your assignment list or add tasks to stay prepared.
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
-                  <button 
-                    className="btn-primary" 
-                    style={{ fontSize: '13px', padding: '8px 16px' }}
-                    onClick={() => setShowTaskModal(true)}
-                  >
-                    <Plus size={14} /> Add Task
-                  </button>
-                  <button 
-                    className="btn-secondary" 
-                    style={{ fontSize: '13px', padding: '8px 16px' }}
-                    onClick={() => setShowImportModal(true)}
-                  >
-                    <Upload size={14} /> Import File
-                  </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <a
+                  href="/api/schedule/export.ics"
+                  download="today_schedule.ics"
+                  className="btn-secondary"
+                  style={{ padding: '5px 10px', fontSize: '11.5px', textDecoration: 'none' }}
+                  title="Export today's blocks to calendar"
+                >
+                  Export .ics
+                </a>
+                <button
+                  onClick={() => setShowScheduleModal(true)}
+                  className="btn-secondary"
+                  style={{ padding: '5px 10px', fontSize: '11.5px' }}
+                >
+                  <Plus size={13} /> Add Block
+                </button>
+              </div>
+            </div>
+
+            {loading ? (
+              <div style={{ padding: '30px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>
+                Loading schedule...
+              </div>
+            ) : !stats?.today_schedule || stats.today_schedule.length === 0 ? (
+              <div className="empty-state" style={{ padding: '28px 16px' }}>
+                <Calendar className="empty-state-icon" style={{ width: '36px', height: '36px' }} />
+                <div className="empty-state-title" style={{ fontSize: '15px' }}>No Classes Scheduled Today</div>
+                <div className="empty-state-desc" style={{ fontSize: '12.5px' }}>
+                  Enjoy your open study block, or add a custom study sprint or lecture using the button above.
                 </div>
               </div>
             ) : (
-              stats.deadlines.map((task) => (
-                <div 
-                  key={task.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '12px 14px',
-                    borderRadius: '8px',
-                    backgroundColor: task.status === 'Completed' ? '#F9FAFB' : '#FFFFFF',
-                    border: '1px solid #DCE0E5'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                    <button
-                      onClick={() => handleToggleTask(task.id)}
-                      style={{
-                        width: '22px',
-                        height: '22px',
-                        borderRadius: '6px',
-                        border: task.status === 'Completed' ? 'none' : '2px solid #D1D5DB',
-                        backgroundColor: task.status === 'Completed' ? '#166534' : 'transparent',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        flexShrink: 0
-                      }}
-                      aria-label="Toggle task completion"
-                    >
-                      {task.status === 'Completed' && <Check size={14} color="#FFFFFF" />}
-                    </button>
-                    <div>
-                      <div style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: task.status === 'Completed' ? '#9CA3AF' : '#1F2937',
-                        textDecoration: task.status === 'Completed' ? 'line-through' : 'none'
-                      }}>
-                        {task.title}
-                        {task.is_sample && (
-                          <span className="badge badge-demo" style={{ marginLeft: '8px', fontSize: '9px', padding: '1px 5px' }}>
-                            Demo Data
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#6B7280' }}>
-                        Course: <strong>{task.course}</strong> &bull; Due: {task.due_date}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {stats.today_schedule.map((item) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '11px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #DCE5F0',
+                      backgroundColor: item.completed ? '#F8FAFC' : '#FFFFFF',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <button
+                        onClick={() => handleToggleSchedule(item.id)}
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '5px',
+                          border: item.completed ? 'none' : '2px solid #CBD5E1',
+                          backgroundColor: item.completed ? '#2563EB' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          flexShrink: 0
+                        }}
+                        aria-label="Toggle schedule item"
+                      >
+                        {item.completed && <Check size={13} color="#FFFFFF" />}
+                      </button>
+
+                      <div>
+                        <div style={{
+                          fontSize: '13.5px',
+                          fontWeight: '600',
+                          color: item.completed ? '#64748B' : '#172B4D',
+                          textDecoration: item.completed ? 'line-through' : 'none'
+                        }}>
+                          {item.title}
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                          <span>{item.start_time} - {item.end_time}</span>
+                          <span>&bull;</span>
+                          <span>{item.location || 'Campus'}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {getDeadlineBadge(task.due_date, task.status)}
+                    <span className={`badge ${
+                      item.category === 'Class' ? 'badge-blue' :
+                      item.category === 'Lab' ? 'badge-navy' : 'badge-neutral'
+                    }`}>
+                      {item.category}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Card 2: Weekly Study Activity Chart */}
+          <div className="campus-card" style={{ padding: '22px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <TrendingUp size={18} color="#2563EB" /> Weekly Study Activity
+                </h3>
+                <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                  Scheduled milestone hours vs targets across Monday to Sunday
+                </div>
+              </div>
+            </div>
+
+            {loading ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>
+                Loading study activity...
+              </div>
+            ) : !stats?.weekly_velocity || stats.weekly_velocity.length === 0 ? (
+              <div className="empty-state" style={{ padding: '28px 16px' }}>
+                <BarChart2 className="empty-state-icon" style={{ width: '36px', height: '36px' }} />
+                <div className="empty-state-title" style={{ fontSize: '15px' }}>No Study Velocity Logged</div>
+                <div className="empty-state-desc" style={{ fontSize: '12.5px' }}>
+                  Create a study plan or log tasks with estimated hours to track your weekly study velocity.
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ height: '220px', width: '100%' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats.weekly_velocity} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis dataKey="day" tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 12, fill: '#64748B' }} axisLine={false} tickLine={false} unit="h" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#FFFFFF',
+                          borderColor: '#DCE5F0',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          boxShadow: '0 4px 12px rgba(15, 39, 68, 0.08)'
+                        }}
+                      />
+                      <Bar dataKey="target" name="Target Hours" fill="#CBD5E1" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="actual" name="Actual Hours" fill="#2563EB" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '12px', fontSize: '12px', color: '#64748B' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ width: '10px', height: '10px', backgroundColor: '#2563EB', borderRadius: '2px' }} />
+                    <span>Actual Study Hours</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ width: '10px', height: '10px', backgroundColor: '#CBD5E1', borderRadius: '2px' }} />
+                    <span>Target Commitment</span>
                   </div>
                 </div>
-              ))
+              </div>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Real Academic Analytics: Weekly Study Velocity & Course Workload Distribution */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(440px, 1fr))',
-        gap: '24px'
-      }}>
-        {/* Weekly Study Velocity Chart (Actual DB data) */}
-        <div className="campus-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <TrendingUp size={20} color="#7B1123" />
+        {/* ---------------------------------------------------------------------
+            COLUMN 2: Upcoming Deadlines & Ask CampusMate AI
+            --------------------------------------------------------------------- */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Card 3: Upcoming Deadlines */}
+          <div className="campus-card" style={{ padding: '22px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#4A0E17', margin: 0 }}>
-                  Weekly Study Velocity
+                <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Clock size={18} color="#D97706" /> Upcoming Deadlines
                 </h3>
-                <span style={{ fontSize: '12px', color: '#6B7280' }}>Actual logged hours vs target for this week</span>
+                <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                  Urgent assignments and exams requiring attention
+                </div>
               </div>
+
+              <button
+                onClick={() => navigate('/tasks')}
+                className="btn-tertiary"
+                style={{ fontSize: '12px', padding: 0 }}
+              >
+                View All Tasks &rarr;
+              </button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '11px', fontWeight: '600' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#7B1123' }}>
-                <span style={{ width: '10px', height: '10px', backgroundColor: '#7B1123', borderRadius: '2px' }} /> Actual
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#6B7280' }}>
-                <span style={{ width: '10px', height: '10px', backgroundColor: '#E5E7EB', borderRadius: '2px' }} /> Target
-              </span>
-            </div>
+
+            {loading ? (
+              <div style={{ padding: '30px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>
+                Checking deadlines...
+              </div>
+            ) : !stats?.urgent_deadlines || stats.urgent_deadlines.length === 0 ? (
+              <div className="empty-state" style={{ padding: '28px 16px' }}>
+                <CheckCircle2 className="empty-state-icon" style={{ width: '36px', height: '36px', color: '#166534' }} />
+                <div className="empty-state-title" style={{ fontSize: '15px' }}>No Impending Deadlines</div>
+                <div className="empty-state-desc" style={{ fontSize: '12.5px' }}>
+                  You are all caught up! Use the "+ Add Task" button above to log upcoming course assignments.
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {stats.urgent_deadlines.map((task) => (
+                  <div
+                    key={task.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #DCE5F0',
+                      backgroundColor: task.status === 'Completed' ? '#F8FAFC' : '#FFFFFF',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                      <button
+                        onClick={() => handleToggleTask(task.id)}
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '5px',
+                          border: task.status === 'Completed' ? 'none' : '2px solid #CBD5E1',
+                          backgroundColor: task.status === 'Completed' ? '#2563EB' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          flexShrink: 0
+                        }}
+                        aria-label="Toggle task completion"
+                      >
+                        {task.status === 'Completed' && <Check size={13} color="#FFFFFF" />}
+                      </button>
+
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{
+                          fontSize: '13.5px',
+                          fontWeight: '600',
+                          color: task.status === 'Completed' ? '#64748B' : '#172B4D',
+                          textDecoration: task.status === 'Completed' ? 'line-through' : 'none',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {task.title}
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                          <span style={{ fontWeight: '600', color: '#2563EB' }}>{task.course}</span>
+                          <span>&bull;</span>
+                          <span>Due: <strong>{task.due_date}</strong></span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                      {task.priority === 'High' && (
+                        <span className="badge badge-error" style={{ fontSize: '10px' }}>Urgent</span>
+                      )}
+                      <span className="badge badge-neutral" style={{ fontSize: '10px' }}>
+                        {task.category}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {!hasVelocityData ? (
-            <div style={{ 
-              height: '220px', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              backgroundColor: '#F9FAFB', 
-              borderRadius: '8px',
-              border: '1px dashed #D1D5DB',
-              padding: '20px',
-              textAlign: 'center'
-            }}>
-              <TrendingUp size={28} color="#9CA3AF" style={{ marginBottom: '8px' }} />
-              <div style={{ fontSize: '14px', fontWeight: '600', color: '#4A0E17' }}>No study hours logged this week yet</div>
-              <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px', maxWidth: '320px' }}>
-                Create a study roadmap or complete scheduled study sessions to track your weekly velocity.
+          {/* Card 4: Ask CampusMate AI & Academic Recommendation */}
+          <div className="campus-card" style={{ padding: '22px', backgroundColor: '#FFFFFF', border: '1px solid #DCE5F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
+                <Sparkles size={16} />
               </div>
+              <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', margin: 0 }}>
+                Ask CampusMate AI
+              </h3>
             </div>
-          ) : (
-            <div style={{ width: '100%', height: '220px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={weeklyData}
-                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                  <XAxis dataKey="day" stroke="#6B7280" fontSize={12} tickLine={false} />
-                  <YAxis stroke="#6B7280" fontSize={12} tickLine={false} unit="h" />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DCE0E5', borderRadius: '8px', fontSize: '12px' }}
-                    formatter={(val) => [`${val} hrs`, '']}
-                  />
-                  <Bar dataKey="target" fill="#E5E7EB" radius={[4, 4, 0, 0]} barSize={14} />
-                  <Bar dataKey="actual" fill="#7B1123" radius={[4, 4, 0, 0]} barSize={14} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
 
-        {/* Course Workload Distribution Chart (Actual DB data) */}
-        <div className="campus-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <BarChart2 size={20} color="#7B1123" />
-              <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#4A0E17', margin: 0 }}>
-                  Course Workload Distribution
-                </h3>
-                <span style={{ fontSize: '12px', color: '#6B7280' }}>Estimated revision hours by course from database</span>
+            {/* Live Academic Recommendation if present */}
+            {stats?.ai_recommendation && (
+              <div style={{
+                backgroundColor: '#EFF6FF',
+                border: '1px solid #DBEAFE',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                marginBottom: '14px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#1E40AF', textTransform: 'uppercase' }}>
+                    Agent Priority Recommendation
+                  </span>
+                  <span className="badge badge-warning" style={{ fontSize: '10px' }}>Recommended</span>
+                </div>
+                <p style={{ fontSize: '12.5px', color: '#172B4D', margin: 0, lineHeight: 1.45 }}>
+                  {stats.ai_recommendation.text}
+                </p>
+                <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={() => navigate(`/assistant?prompt=${encodeURIComponent(stats.ai_recommendation.prompt_action || 'Help me act on this priority task')}`)}
+                    className="btn-primary"
+                    style={{ padding: '4px 10px', fontSize: '11.5px' }}
+                  >
+                    Act with AI &rarr;
+                  </button>
+                </div>
               </div>
+            )}
+
+            {/* Quick Prompt Input */}
+            <form onSubmit={handleQuickPromptSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <input
+                type="text"
+                placeholder="Ask your assistant anything..."
+                value={quickPrompt}
+                onChange={(e) => setQuickPrompt(e.target.value)}
+                className="form-input"
+                style={{ fontSize: '13px', padding: '8px 12px' }}
+              />
+              <button type="submit" className="btn-primary" style={{ padding: '8px 14px', flexShrink: 0 }}>
+                <Send size={13} /> Ask
+              </button>
+            </form>
+
+            {/* Suggested Quick Prompt Chips */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {[
+                "What assignments do I have due this week?",
+                "What is the 75% attendance rule?",
+                "Create a study plan for upcoming exams"
+              ].map((chip, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => navigate(`/assistant?prompt=${encodeURIComponent(chip)}`)}
+                  className="btn-secondary"
+                  style={{
+                    padding: '5px 10px',
+                    fontSize: '11.5px',
+                    borderRadius: '16px',
+                    backgroundColor: '#F8FAFC'
+                  }}
+                >
+                  {chip}
+                </button>
+              ))}
             </div>
-            <span className="badge badge-burgundy">Live Queue</span>
           </div>
-
-          {!hasWorkloadData ? (
-            <div style={{ 
-              height: '220px', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              backgroundColor: '#F9FAFB', 
-              borderRadius: '8px',
-              border: '1px dashed #D1D5DB',
-              padding: '20px',
-              textAlign: 'center'
-            }}>
-              <BarChart2 size={28} color="#9CA3AF" style={{ marginBottom: '8px' }} />
-              <div style={{ fontSize: '14px', fontWeight: '600', color: '#4A0E17' }}>No active course tasks found</div>
-              <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px', maxWidth: '320px' }}>
-                Add academic tasks or upload your course syllabus to visualize your effort distribution.
-              </div>
-            </div>
-          ) : (
-            <div style={{ width: '100%', height: '220px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={workloadData}
-                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="effortGradientBurgundy" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#7B1123" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#7B1123" stopOpacity={0.0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                  <XAxis dataKey="course" stroke="#6B7280" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#6B7280" fontSize={12} tickLine={false} unit="h" />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DCE0E5', borderRadius: '8px', fontSize: '12px' }}
-                    formatter={(val) => [`${val} hrs`, 'Workload']}
-                  />
-                  <Area type="monotone" dataKey="hours" stroke="#7B1123" strokeWidth={2} fillOpacity={1} fill="url(#effortGradientBurgundy)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Quick Add Task Modal */}
+      {/* =========================================================================
+          MODALS: Add Task, Import File, Add Schedule Block
+          ========================================================================= */}
+
+      {/* Modal: Quick Task */}
       {showTaskModal && (
         <div className="modal-overlay" onClick={() => setShowTaskModal(false)}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#4A0E17', marginBottom: '16px' }}>
-              Add Academic Task or Deadline
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', margin: 0 }}>
+                Add Academic Task / Assignment
+              </h3>
+              <button onClick={() => setShowTaskModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+                <X size={18} />
+              </button>
+            </div>
+
             <form onSubmit={handleCreateTask} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '600', color: '#4A0E17', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                   Task Title *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g., Operating Systems Lab Report"
+                  placeholder="e.g., Computer Networks Lab Report 4"
                   value={newTask.title}
                   onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                   className="form-input"
@@ -868,19 +797,19 @@ export default function Dashboard() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#4A0E17', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     Course Code
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g., CS304 or General"
+                    placeholder="e.g., CS304"
                     value={newTask.course}
                     onChange={(e) => setNewTask({ ...newTask, course: e.target.value })}
                     className="form-input"
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#4A0E17', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     Due Date *
                   </label>
                   <input
@@ -895,24 +824,7 @@ export default function Dashboard() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#4A0E17', display: 'block', marginBottom: '6px' }}>
-                    Category
-                  </label>
-                  <select
-                    value={newTask.category}
-                    onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
-                    className="form-select"
-                  >
-                    <option value="Assignment">Assignment</option>
-                    <option value="Exam">Exam</option>
-                    <option value="Project">Project</option>
-                    <option value="Lab">Lab</option>
-                    <option value="Reading">Reading</option>
-                    <option value="Admin">Admin</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#4A0E17', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     Priority
                   </label>
                   <select
@@ -925,32 +837,30 @@ export default function Dashboard() {
                     <option value="Low">Low Priority</option>
                   </select>
                 </div>
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
+                    Category
+                  </label>
+                  <select
+                    value={newTask.category}
+                    onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
+                    className="form-select"
+                  >
+                    <option value="Assignment">Assignment</option>
+                    <option value="Exam">Exam</option>
+                    <option value="Project">Project</option>
+                    <option value="Lab">Lab</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: '600', color: '#4A0E17', display: 'block', marginBottom: '6px' }}>
-                  Estimated Hours
-                </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0.5"
-                  value={newTask.estimated_hours}
-                  onChange={(e) => setNewTask({ ...newTask, estimated_hours: parseFloat(e.target.value) || 2.0 })}
-                  className="form-input"
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => setShowTaskModal(false)}
-                >
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowTaskModal(false)}>
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
-                  Create Task
+                  Save Task
                 </button>
               </div>
             </form>
@@ -958,22 +868,107 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Schedule Time Block Modal */}
+      {/* Modal: Import File */}
+      {showImportModal && (
+        <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
+          <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', margin: 0 }}>
+                Import Assignments or Schedule File
+              </h3>
+              <button onClick={() => setShowImportModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {importFeedback && (
+              <div style={{
+                padding: '10px 12px',
+                borderRadius: '8px',
+                marginBottom: '14px',
+                fontSize: '12.5px',
+                backgroundColor: importFeedback.type === 'success' ? '#DCFCE7' : '#FEE2E2',
+                color: importFeedback.type === 'success' ? '#166534' : '#991B1B'
+              }}>
+                {importFeedback.text}
+              </div>
+            )}
+
+            <form onSubmit={handleImportSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{
+                border: '2px dashed #CBD5E1',
+                borderRadius: '10px',
+                padding: '24px',
+                textAlign: 'center',
+                backgroundColor: '#F8FAFC'
+              }}>
+                <Upload size={32} color="#2563EB" style={{ margin: '0 auto 8px' }} />
+                <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#163A63' }}>
+                  {importFile ? importFile.name : 'Choose a CSV, XLSX, or PDF file'}
+                </div>
+                <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '4px' }}>
+                  Extract tasks and timetables automatically from official college syllabus spreadsheets or documents.
+                </div>
+                <input
+                  type="file"
+                  accept=".csv,.xlsx,.tsv,.pdf"
+                  onChange={(e) => setImportFile(e.target.files[0])}
+                  style={{ display: 'none' }}
+                  id="dashboard-file-import"
+                />
+                <label
+                  htmlFor="dashboard-file-import"
+                  className="btn-secondary"
+                  style={{ display: 'inline-block', marginTop: '12px', cursor: 'pointer' }}
+                >
+                  Select File
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <a
+                  href="/api/tasks/sample-template.csv"
+                  download="tasks_template.csv"
+                  style={{ fontSize: '12px', color: '#2563EB', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <Download size={13} /> Sample CSV Template
+                </a>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="button" className="btn-secondary" onClick={() => setShowImportModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={!importFile || importing} className="btn-primary">
+                    {importing ? 'Processing...' : 'Upload & Import'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Quick Schedule */}
       {showScheduleModal && (
         <div className="modal-overlay" onClick={() => setShowScheduleModal(false)}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#4A0E17', marginBottom: '16px' }}>
-              Add Daily Schedule Block
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', margin: 0 }}>
+                Add Schedule / Lecture Block
+              </h3>
+              <button onClick={() => setShowScheduleModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+                <X size={18} />
+              </button>
+            </div>
+
             <form onSubmit={handleCreateSchedule} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '600', color: '#4A0E17', display: 'block', marginBottom: '6px' }}>
-                  Block Title *
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
+                  Session Title *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g., CS304: Operating Systems Lecture"
+                  placeholder="e.g., CS304 Operating Systems Lecture"
                   value={newSchedule.title}
                   onChange={(e) => setNewSchedule({ ...newSchedule, title: e.target.value })}
                   className="form-input"
@@ -982,12 +977,11 @@ export default function Dashboard() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#4A0E17', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     Start Time
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="09:00 AM"
                     value={newSchedule.start_time}
                     onChange={(e) => setNewSchedule({ ...newSchedule, start_time: e.target.value })}
@@ -995,12 +989,11 @@ export default function Dashboard() {
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#4A0E17', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     End Time
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="10:30 AM"
                     value={newSchedule.end_time}
                     onChange={(e) => setNewSchedule({ ...newSchedule, end_time: e.target.value })}
@@ -1011,19 +1004,7 @@ export default function Dashboard() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#4A0E17', display: 'block', marginBottom: '6px' }}>
-                    Date
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={newSchedule.date}
-                    onChange={(e) => setNewSchedule({ ...newSchedule, date: e.target.value })}
-                    className="form-input"
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#4A0E17', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     Category
                   </label>
                   <select
@@ -1031,33 +1012,28 @@ export default function Dashboard() {
                     onChange={(e) => setNewSchedule({ ...newSchedule, category: e.target.value })}
                     className="form-select"
                   >
-                    <option value="Class">Class</option>
-                    <option value="Lab">Lab</option>
-                    <option value="Study">Study</option>
-                    <option value="Event">Event</option>
+                    <option value="Class">Class / Lecture</option>
+                    <option value="Lab">Laboratory Session</option>
+                    <option value="Study">Deep Work / Study</option>
+                    <option value="Meeting">Club / Meeting</option>
                   </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Hall 204 or Library"
+                    value={newSchedule.location}
+                    onChange={(e) => setNewSchedule({ ...newSchedule, location: e.target.value })}
+                    className="form-input"
+                  />
                 </div>
               </div>
 
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: '600', color: '#4A0E17', display: 'block', marginBottom: '6px' }}>
-                  Location / Room
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Lecture Hall 201 or Computing Lab"
-                  value={newSchedule.location}
-                  onChange={(e) => setNewSchedule({ ...newSchedule, location: e.target.value })}
-                  className="form-input"
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => setShowScheduleModal(false)}
-                >
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowScheduleModal(false)}>
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
@@ -1068,90 +1044,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
-      {/* File Import Modal (CSV, Spreadsheet, PDF) */}
-      {showImportModal && (
-        <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
-          <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#4A0E17', marginBottom: '12px' }}>
-              Import Assignments & Timetable
-            </h3>
-            <p style={{ fontSize: '13px', color: '#6B7280', marginBottom: '16px' }}>
-              Upload your actual academic schedule, syllabus, or deadline list. Supports <strong>CSV, Excel (.xlsx), TSV</strong> and <strong>PDF</strong> timetable files.
-            </p>
-
-            {importFeedback && (
-              <div style={{
-                padding: '12px 16px',
-                borderRadius: '8px',
-                marginBottom: '16px',
-                fontSize: '13px',
-                backgroundColor: importFeedback.type === 'success' ? '#DDF5E5' : '#FCE4E4',
-                color: importFeedback.type === 'success' ? '#166534' : '#991B1B',
-                border: importFeedback.type === 'success' ? '1px solid #bbf7d0' : '1px solid #fca5a5'
-              }}>
-                {importFeedback.message}
-              </div>
-            )}
-
-            <form onSubmit={handleFileUpload} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{
-                border: '2px dashed #D1D5DB',
-                borderRadius: '10px',
-                padding: '24px',
-                textAlign: 'center',
-                backgroundColor: '#F9FAFB',
-                cursor: 'pointer'
-              }}>
-                <FileSpreadsheet size={36} color="#7B1123" style={{ margin: '0 auto 10px' }} />
-                <div style={{ fontSize: '14px', fontWeight: '600', color: '#4A0E17' }}>
-                  {importFile ? importFile.name : "Select or drag CSV, Excel (.xlsx), or PDF"}
-                </div>
-                <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
-                  Auto-detects Title, Course, Due Date, Priority, and Exam dates
-                </div>
-                <input
-                  type="file"
-                  accept=".csv,.xlsx,.xls,.tsv,.txt,.pdf"
-                  required
-                  onChange={(e) => setImportFile(e.target.files[0])}
-                  style={{ marginTop: '12px' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <a
-                  href="/api/tasks/sample-template.csv"
-                  download="campusmate_tasks_template.csv"
-                  className="btn-secondary"
-                  style={{ fontSize: '12px', padding: '6px 12px', textDecoration: 'none' }}
-                >
-                  <Download size={13} color="#7B1123" /> Download Sample CSV
-                </a>
-
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() => setShowImportModal(false)}
-                    disabled={importing}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn-primary"
-                    disabled={importing || !importFile}
-                  >
-                    {importing ? "Processing..." : "Import into Planner"}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

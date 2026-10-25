@@ -140,7 +140,7 @@ export default function Tasks() {
         fetchTasks();
         setTimeout(() => setShowImportModal(false), 1500);
       } else {
-        setImportStatus({ success: false, message: data.detail || 'Import failed' });
+        setImportStatus({ success: false, message: data.detail || 'Import failed.' });
       }
     } catch (err) {
       setImportStatus({ success: false, message: err.message });
@@ -155,7 +155,6 @@ export default function Tasks() {
     try {
       setImportLoading(true);
       setImportStatus(null);
-      // Parse lines: Title, Course, DueDate, Priority, Category
       const lines = manualBatchText.trim().split('\n');
       const taskList = [];
       for (const line of lines) {
@@ -189,7 +188,7 @@ export default function Tasks() {
         fetchTasks();
         setTimeout(() => setShowImportModal(false), 1500);
       } else {
-        setImportStatus({ success: false, message: data.detail || 'Batch creation failed' });
+        setImportStatus({ success: false, message: data.detail || 'Batch creation failed.' });
       }
     } catch (err) {
       setImportStatus({ success: false, message: err.message });
@@ -199,7 +198,7 @@ export default function Tasks() {
   };
 
   const handleClearDemoData = async () => {
-    if (!window.confirm("Remove all demonstration tasks and sample records? Your personal tasks and uploads will be preserved.")) return;
+    if (!window.confirm("Remove demonstration sample tasks? Your personal tasks and custom uploads will be preserved.")) return;
     try {
       setClearingSample(true);
       const res = await fetch('/api/clear-sample-data', { method: 'POST' });
@@ -244,11 +243,11 @@ export default function Tasks() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--primary-dark)' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#163A63', margin: 0 }}>
             Academic Tasks & Deadlines
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
-            Track assignments, lab submissions, and exam milestones connected to your live database.
+          <p style={{ color: '#64748B', fontSize: '13px', marginTop: '2px', marginBottom: 0 }}>
+            Track assignments, lab submissions, and exam milestones connected directly to your database.
           </p>
         </div>
 
@@ -259,15 +258,15 @@ export default function Tasks() {
             className="btn-secondary"
             title="Export tasks to CSV"
           >
-            <Download size={15} /> Export CSV
+            <Download size={14} /> Export CSV
           </a>
 
           <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
-            <Upload size={15} /> Import Tasks
+            <Upload size={14} /> Import Tasks
           </button>
 
           <button className="btn-primary" onClick={() => setShowModal(true)}>
-            <Plus size={16} /> Add Academic Task
+            <Plus size={15} /> Add Task
           </button>
         </div>
       </div>
@@ -275,10 +274,10 @@ export default function Tasks() {
       {/* Demo Data Banner if sample records exist */}
       {hasSampleData && (
         <div style={{
-          backgroundColor: '#FFF7ED',
-          border: '1px solid #FFEDD5',
-          borderRadius: '10px',
-          padding: '12px 18px',
+          backgroundColor: '#FFFBEB',
+          border: '1px solid #FDE68A',
+          borderRadius: '8px',
+          padding: '10px 16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -287,22 +286,22 @@ export default function Tasks() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span className="badge badge-demo">Demo Records Active</span>
-            <span style={{ fontSize: '13px', color: '#9A3412' }}>
-              Sample demonstration tasks are currently visible. You can replace them anytime by importing your actual syllabus or assignments.
+            <span style={{ fontSize: '12.5px', color: '#92400E' }}>
+              Sample demonstration tasks are currently active. You can clear them or import your actual syllabus anytime.
             </span>
           </div>
           <button
             onClick={handleClearDemoData}
             disabled={clearingSample}
             style={{
-              fontSize: '12px',
-              padding: '6px 12px',
-              backgroundColor: '#9A3412',
+              fontSize: '11.5px',
+              padding: '5px 10px',
+              backgroundColor: '#92400E',
               color: '#FFFFFF',
               border: 'none',
               borderRadius: '6px',
               cursor: 'pointer',
-              fontWeight: '500'
+              fontWeight: '600'
             }}
           >
             {clearingSample ? 'Clearing...' : 'Remove Demo Tasks'}
@@ -312,58 +311,58 @@ export default function Tasks() {
 
       {/* Metrics Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-        <div className="campus-card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--primary)' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div className="campus-card" style={{ padding: '16px 20px', borderLeft: '4px solid #2563EB' }}>
+          <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Active Deadlines
           </div>
-          <div style={{ fontSize: '26px', fontWeight: '800', color: 'var(--primary-dark)', marginTop: '4px' }}>
+          <div style={{ fontSize: '24px', fontWeight: '800', color: '#163A63', marginTop: '2px' }}>
             {pendingCount}
           </div>
         </div>
 
-        <div className="campus-card" style={{ padding: '16px 20px', borderLeft: '4px solid #C53030' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div className="campus-card" style={{ padding: '16px 20px', borderLeft: '4px solid #D97706' }}>
+          <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             High Priority
           </div>
-          <div style={{ fontSize: '26px', fontWeight: '800', color: '#991B1B', marginTop: '4px' }}>
+          <div style={{ fontSize: '24px', fontWeight: '800', color: '#B45309', marginTop: '2px' }}>
             {highPriorityCount}
           </div>
         </div>
 
         <div className="campus-card" style={{ padding: '16px 20px', borderLeft: '4px solid #166534' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Completed
+          <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Completed Tasks
           </div>
-          <div style={{ fontSize: '26px', fontWeight: '800', color: '#166534', marginTop: '4px' }}>
+          <div style={{ fontSize: '24px', fontWeight: '800', color: '#166534', marginTop: '2px' }}>
             {completedCount}
           </div>
         </div>
       </div>
 
       {/* Filters & Search Toolbar */}
-      <div className="campus-card" style={{ padding: '16px 20px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="campus-card" style={{ padding: '14px 18px', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center', justifyContent: 'space-between' }}>
         {/* Search */}
-        <div style={{ position: 'relative', flex: '1 1 260px' }}>
-          <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+        <div style={{ position: 'relative', flex: '1 1 240px' }}>
+          <Search size={15} color="#64748B" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
             placeholder="Search by title, course, or category..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="form-input"
-            style={{ paddingLeft: '36px' }}
+            style={{ paddingLeft: '34px', fontSize: '13px', padding: '7px 12px 7px 34px' }}
           />
         </div>
 
         {/* Filter & Sort Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>Status:</span>
+            <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '600' }}>Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="form-select"
-              style={{ width: 'auto', padding: '6px 12px' }}
+              style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px' }}
             >
               <option value="All">All Statuses</option>
               <option value="Pending">Pending</option>
@@ -373,12 +372,12 @@ export default function Tasks() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>Category:</span>
+            <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '600' }}>Category:</span>
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="form-select"
-              style={{ width: 'auto', padding: '6px 12px' }}
+              style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px' }}
             >
               <option value="All">All Categories</option>
               <option value="Assignment">Assignment</option>
@@ -390,12 +389,12 @@ export default function Tasks() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>Sort:</span>
+            <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '600' }}>Sort:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="form-select"
-              style={{ width: 'auto', padding: '6px 12px' }}
+              style={{ width: 'auto', padding: '6px 10px', fontSize: '12.5px' }}
             >
               <option value="dueAsc">Due Date (Earliest)</option>
               <option value="dueDesc">Due Date (Latest)</option>
@@ -407,27 +406,27 @@ export default function Tasks() {
       </div>
 
       {/* Task List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {loading ? (
-          <div className="campus-card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <div className="campus-card" style={{ padding: '40px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>
             Loading academic tasks...
           </div>
         ) : sortedTasks.length === 0 ? (
           <div className="empty-state">
             <CheckSquare className="empty-state-icon" />
             <div className="empty-state-title">
-              {tasks.length === 0 ? 'No Academic Tasks Yet' : 'No Matching Tasks Found'}
+              {tasks.length === 0 ? 'No Academic Tasks Found' : 'No Matching Tasks Found'}
             </div>
             <div className="empty-state-desc">
               {tasks.length === 0
-                ? 'Your academic task list is clean and empty. Upload your assignment timetable or syllabus to automatically extract deadlines.'
-                : 'Try adjusting your search query or clear your filter selections to view other records.'}
+                ? 'Your task list is empty. Upload your assignment timetable or course syllabus to automatically extract deadlines.'
+                : 'Try adjusting your search query or reset your status filter.'}
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
               {tasks.length === 0 ? (
                 <>
                   <button className="btn-primary" onClick={() => setShowImportModal(true)}>
-                    <Upload size={14} /> Import Assignments
+                    <Upload size={14} /> Import Tasks
                   </button>
                   <button className="btn-secondary" onClick={() => setShowModal(true)}>
                     <Plus size={14} /> Add First Task
@@ -457,29 +456,28 @@ export default function Tasks() {
               <div
                 key={task.id}
                 style={{
-                  backgroundColor: '#FFFFFF',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '12px',
-                  padding: '16px 20px',
+                  backgroundColor: isCompleted ? '#F8FAFC' : '#FFFFFF',
+                  border: '1px solid #DCE5F0',
+                  borderRadius: '10px',
+                  padding: '14px 18px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '16px',
-                  boxShadow: 'var(--shadow-sm)',
-                  opacity: isCompleted ? 0.75 : 1,
-                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
+                  boxShadow: 'var(--shadow-xs)',
+                  transition: 'border-color 0.15s ease'
                 }}
               >
                 {/* Left: Checkbox & Info */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                   <button
                     onClick={() => handleToggle(task.id)}
                     style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '6px',
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '5px',
                       border: isCompleted ? 'none' : '2px solid #CBD5E1',
-                      backgroundColor: isCompleted ? 'var(--primary)' : 'transparent',
+                      backgroundColor: isCompleted ? '#2563EB' : 'transparent',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -488,26 +486,29 @@ export default function Tasks() {
                     }}
                     aria-label="Toggle task status"
                   >
-                    {isCompleted && <Check size={15} color="#FFFFFF" />}
+                    {isCompleted && <Check size={13} color="#FFFFFF" />}
                   </button>
 
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <div style={{
-                      fontSize: '15px',
+                      fontSize: '14px',
                       fontWeight: '600',
-                      color: isCompleted ? 'var(--text-secondary)' : 'var(--text-primary)',
+                      color: isCompleted ? '#64748B' : '#172B4D',
                       textDecoration: isCompleted ? 'line-through' : 'none',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px'
+                      gap: '8px',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
                     }}>
                       <span>{task.title}</span>
                       {task.is_sample && (
-                        <span className="badge badge-demo">Demo</span>
+                        <span className="badge badge-demo" style={{ fontSize: '9.5px', padding: '1px 5px' }}>Demo</span>
                       )}
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: '600', color: 'var(--primary)' }}>{task.course}</span>
+                    <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: '600', color: '#2563EB' }}>{task.course}</span>
                       <span>&bull;</span>
                       <span>Due: <strong>{task.due_date}</strong></span>
                       {task.estimated_hours && (
@@ -519,7 +520,9 @@ export default function Tasks() {
                       {task.description && (
                         <>
                           <span>&bull;</span>
-                          <span style={{ fontStyle: 'italic' }}>{task.description}</span>
+                          <span style={{ fontStyle: 'italic', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {task.description}
+                          </span>
                         </>
                       )}
                     </div>
@@ -527,18 +530,18 @@ export default function Tasks() {
                 </div>
 
                 {/* Right: Badges & Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                   {isOverdue && <span className="badge badge-error">Overdue</span>}
                   {isDueToday && <span className="badge badge-warning">Due Today</span>}
 
                   <span className={`badge ${
                     task.priority === 'High' ? 'badge-error' :
-                    task.priority === 'Medium' ? 'badge-burgundy' : 'badge-grey'
+                    task.priority === 'Medium' ? 'badge-blue' : 'badge-neutral'
                   }`}>
                     {task.priority} Priority
                   </span>
 
-                  <span className="badge badge-grey">
+                  <span className="badge badge-neutral">
                     {task.category}
                   </span>
 
@@ -548,7 +551,7 @@ export default function Tasks() {
                     style={{ padding: '6px 8px', color: '#991B1B' }}
                     title="Delete Task"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={13} />
                   </button>
                 </div>
               </div>
@@ -561,13 +564,13 @@ export default function Tasks() {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', marginBottom: '16px' }}>
               Add Academic Task or Assignment
             </h3>
 
             <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                   Task Title *
                 </label>
                 <input
@@ -582,7 +585,7 @@ export default function Tasks() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     Course Code
                   </label>
                   <input
@@ -594,7 +597,7 @@ export default function Tasks() {
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     Due Date *
                   </label>
                   <input
@@ -609,7 +612,7 @@ export default function Tasks() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     Category
                   </label>
                   <select
@@ -625,7 +628,7 @@ export default function Tasks() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     Priority
                   </label>
                   <select
@@ -640,24 +643,22 @@ export default function Tasks() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
-                    Estimated Workload (Hours)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0.5"
-                    value={newTask.estimated_hours}
-                    onChange={(e) => setNewTask({ ...newTask, estimated_hours: parseFloat(e.target.value) || 1.0 })}
-                    className="form-input"
-                  />
-                </div>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
+                  Estimated Workload (Hours)
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0.5"
+                  value={newTask.estimated_hours}
+                  onChange={(e) => setNewTask({ ...newTask, estimated_hours: parseFloat(e.target.value) || 1.0 })}
+                  className="form-input"
+                />
               </div>
 
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                   Description / Instructions (Optional)
                 </label>
                 <textarea
@@ -669,7 +670,7 @@ export default function Tasks() {
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
                 <button
                   type="button"
                   className="btn-secondary"
@@ -689,31 +690,32 @@ export default function Tasks() {
       {/* Modal: Import Tasks (CSV, XLSX, PDF, Manual Paste) */}
       {showImportModal && (
         <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
-          <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '580px', padding: '24px' }}>
+          <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '560px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
+              <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', margin: 0 }}>
                 Import Academic Tasks & Deadlines
               </h3>
               <button
                 onClick={() => setShowImportModal(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Import Tabs */}
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '18px' }}>
+            <div style={{ display: 'flex', borderBottom: '1px solid #DCE5F0', marginBottom: '16px' }}>
               <button
                 onClick={() => setImportTab('file')}
                 style={{
                   padding: '8px 16px',
                   background: 'none',
                   border: 'none',
-                  borderBottom: importTab === 'file' ? '2px solid var(--primary)' : '2px solid transparent',
-                  fontWeight: importTab === 'file' ? '600' : '400',
-                  color: importTab === 'file' ? 'var(--primary)' : 'var(--text-secondary)',
-                  cursor: 'pointer'
+                  borderBottom: importTab === 'file' ? '2px solid #2563EB' : '2px solid transparent',
+                  fontWeight: importTab === 'file' ? '700' : '500',
+                  color: importTab === 'file' ? '#2563EB' : '#64748B',
+                  cursor: 'pointer',
+                  fontSize: '13px'
                 }}
               >
                 File Upload (.csv, .xlsx, .pdf)
@@ -724,10 +726,11 @@ export default function Tasks() {
                   padding: '8px 16px',
                   background: 'none',
                   border: 'none',
-                  borderBottom: importTab === 'manual' ? '2px solid var(--primary)' : '2px solid transparent',
-                  fontWeight: importTab === 'manual' ? '600' : '400',
-                  color: importTab === 'manual' ? 'var(--primary)' : 'var(--text-secondary)',
-                  cursor: 'pointer'
+                  borderBottom: importTab === 'manual' ? '2px solid #2563EB' : '2px solid transparent',
+                  fontWeight: importTab === 'manual' ? '700' : '500',
+                  color: importTab === 'manual' ? '#2563EB' : '#64748B',
+                  cursor: 'pointer',
+                  fontSize: '13px'
                 }}
               >
                 Paste / Manual Batch
@@ -738,30 +741,30 @@ export default function Tasks() {
               <div style={{
                 padding: '10px 14px',
                 borderRadius: '8px',
-                marginBottom: '16px',
-                fontSize: '13px',
-                backgroundColor: importStatus.success ? '#ECFDF5' : '#FEF2F2',
-                color: importStatus.success ? '#065F46' : '#991B1B',
-                border: `1px solid ${importStatus.success ? '#A7F3D0' : '#FECACA'}`
+                marginBottom: '14px',
+                fontSize: '12.5px',
+                backgroundColor: importStatus.success ? '#DCFCE7' : '#FEE2E2',
+                color: importStatus.success ? '#166534' : '#991B1B',
+                border: `1px solid ${importStatus.success ? '#BBF7D0' : '#FECACA'}`
               }}>
                 {importStatus.message}
               </div>
             )}
 
             {importTab === 'file' ? (
-              <form onSubmit={handleFileUpload} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <form onSubmit={handleFileUpload} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div style={{
-                  border: '2px dashed var(--border-color)',
-                  borderRadius: '12px',
-                  padding: '28px 16px',
+                  border: '2px dashed #CBD5E1',
+                  borderRadius: '10px',
+                  padding: '24px 16px',
                   textAlign: 'center',
-                  backgroundColor: 'var(--bg-subtle)'
+                  backgroundColor: '#F8FAFC'
                 }}>
-                  <Upload size={32} color="var(--primary)" style={{ margin: '0 auto 10px auto' }} />
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                  <Upload size={32} color="#2563EB" style={{ margin: '0 auto 8px auto' }} />
+                  <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#163A63' }}>
                     {importFile ? importFile.name : 'Choose a CSV, Excel (.xlsx), or PDF timetable'}
                   </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                  <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
                     Upload your actual course syllabus, assignment schedule, or LMS exported spreadsheet.
                   </div>
                   <input
@@ -775,7 +778,7 @@ export default function Tasks() {
                   <label
                     htmlFor="task-file-input"
                     className="btn-secondary"
-                    style={{ display: 'inline-block', marginTop: '14px', cursor: 'pointer' }}
+                    style={{ display: 'inline-block', marginTop: '12px', cursor: 'pointer' }}
                   >
                     Select File
                   </label>
@@ -785,11 +788,11 @@ export default function Tasks() {
                   <a
                     href="/api/tasks/sample-template.csv"
                     download="tasks_template.csv"
-                    style={{ fontSize: '12px', color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    style={{ fontSize: '12px', color: '#2563EB', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
                   >
-                    <Download size={13} /> Download sample CSV template
+                    <Download size={13} /> Sample CSV Template
                   </a>
-                  <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
                     <button
                       type="button"
                       className="btn-secondary"
@@ -810,7 +813,7 @@ export default function Tasks() {
             ) : (
               <form onSubmit={handleManualBatchSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     Enter One Task Per Line (Format: Title, Course, Due Date, Priority, Category)
                   </label>
                   <textarea
@@ -822,10 +825,10 @@ export default function Tasks() {
                     placeholder="Midterm Exam 1, CS304, 2026-11-15, High, Exam&#10;Lab Report 4, CS304, 2026-11-10, Medium, Lab&#10;Project Sprint Review, EE201, 2026-11-18, High, Project"
                   />
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Tip: Copy-paste rows from Excel or Google Sheets separated by commas.
+                <div style={{ fontSize: '11.5px', color: '#64748B' }}>
+                  Tip: Copy-paste rows directly from Excel or Google Sheets separated by commas.
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
                   <button
                     type="button"
                     className="btn-secondary"

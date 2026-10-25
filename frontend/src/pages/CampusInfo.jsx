@@ -221,7 +221,7 @@ export default function CampusInfo() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="badge badge-burgundy">{hit.category}</span>
+                    <span className="badge badge-blue">{hit.category}</span>
                     <span style={{ fontSize: '12px', color: '#166534', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <ShieldCheck size={14} /> Verified Source: {hit.source_file}
                     </span>
@@ -239,8 +239,8 @@ export default function CampusInfo() {
                   fontSize: '13px',
                   backgroundColor: 'var(--primary-subtle)',
                   padding: '10px 14px',
-                  borderRadius: '6px',
-                  border: '1px solid #F8D7DA',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
                   color: 'var(--text-primary)',
                   fontStyle: 'italic',
                   marginBottom: '10px',
@@ -281,7 +281,7 @@ export default function CampusInfo() {
             {documents.map((doc) => (
               <div
                 key={doc.id}
-                className="campus-card"
+                className="campus-card card-interactive"
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -292,8 +292,8 @@ export default function CampusInfo() {
               >
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span className="badge badge-burgundy">{doc.category}</span>
-                    <span className="badge badge-grey" style={{ fontSize: '10px' }}>{doc.file_type}</span>
+                    <span className="badge badge-blue">{doc.category}</span>
+                    <span className="badge badge-neutral" style={{ fontSize: '10px' }}>{doc.file_type}</span>
                   </div>
 
                   <h4 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--primary-dark)', marginBottom: '8px', lineHeight: 1.4 }}>
@@ -313,7 +313,7 @@ export default function CampusInfo() {
                   borderTop: '1px solid var(--border-color)',
                   fontSize: '12px',
                   color: 'var(--primary)',
-                  fontWeight: '500'
+                  fontWeight: '600'
                 }}>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>
                     {doc.source_file || `${doc.title}.pdf`}
@@ -338,7 +338,7 @@ export default function CampusInfo() {
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ padding: '28px', maxWidth: '700px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
-                <span className="badge badge-burgundy" style={{ marginBottom: '6px' }}>{selectedDoc.category}</span>
+                <span className="badge badge-blue" style={{ marginBottom: '6px' }}>{selectedDoc.category}</span>
                 <h3 style={{ fontSize: '19px', fontWeight: '700', color: 'var(--primary-dark)' }}>
                   {selectedDoc.title}
                 </h3>
@@ -361,11 +361,11 @@ export default function CampusInfo() {
             {/* AI Summary */}
             <div style={{
               backgroundColor: 'var(--primary-subtle)',
-              border: '1px solid #F8D7DA',
+              border: '1px solid #DBEAFE',
               borderRadius: '8px',
               padding: '12px 16px',
               fontSize: '13px',
-              color: 'var(--primary)',
+              color: 'var(--primary-dark)',
               marginBottom: '16px',
               lineHeight: 1.5
             }}>

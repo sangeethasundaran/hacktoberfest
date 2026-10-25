@@ -130,9 +130,9 @@ export default function Settings({ onSettingsUpdated }) {
 
       {clearSuccess && (
         <div style={{
-          backgroundColor: 'var(--primary-subtle)',
-          border: '1px solid #F8D7DA',
-          color: 'var(--primary)',
+          backgroundColor: '#EFF6FF',
+          border: '1px solid #DBEAFE',
+          color: '#1E40AF',
           padding: '12px 18px',
           borderRadius: '8px',
           fontSize: '14px',
@@ -170,8 +170,8 @@ export default function Settings({ onSettingsUpdated }) {
         </div>
 
         <div style={{
-          backgroundColor: settings.ai_mode === 'demo' ? 'var(--primary-subtle)' : '#DCFCE7',
-          border: settings.ai_mode === 'demo' ? '1px solid #F8D7DA' : '1px solid #BBF7D0',
+          backgroundColor: settings.ai_mode === 'demo' ? '#EFF6FF' : '#DCFCE7',
+          border: settings.ai_mode === 'demo' ? '1px solid #DBEAFE' : '1px solid #BBF7D0',
           borderRadius: '8px',
           padding: '14px 18px',
           marginBottom: '20px',
@@ -314,7 +314,7 @@ export default function Settings({ onSettingsUpdated }) {
         </div>
 
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
             <div>
               <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                 Full Name
@@ -339,7 +339,7 @@ export default function Settings({ onSettingsUpdated }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
             <div>
               <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                 Major / Department

@@ -10,11 +10,13 @@ import {
   RotateCcw, 
   Trash2, 
   BookOpen, 
-  Sparkles,
-  ChevronRight,
-  Flame,
-  Check,
-  Copy
+  Sparkles, 
+  ChevronRight, 
+  Flame, 
+  Check, 
+  Copy,
+  Download,
+  AlertCircle
 } from 'lucide-react';
 
 export default function StudyPlanner() {
@@ -145,15 +147,15 @@ export default function StudyPlanner() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Top Banner */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--primary-dark)' }}>
-            Adaptive Study Planner
+          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#163A63', margin: 0 }}>
+            Adaptive Study Planner & Sprints
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
-            Transform syllabus topics into structured daily milestones leading up to your exams.
+          <p style={{ color: '#64748B', fontSize: '13px', marginTop: '2px', marginBottom: 0 }}>
+            Transform syllabus topics into structured daily milestones leading up to your examination deadlines.
           </p>
         </div>
 
@@ -161,51 +163,47 @@ export default function StudyPlanner() {
           className="btn-primary" 
           onClick={() => setShowModal(true)}
         >
-          <Plus size={16} /> Generate New Study Roadmap
+          <Plus size={15} /> Generate Study Roadmap
         </button>
       </div>
 
       {/* Focus Timer Card */}
-      <div style={{
-        backgroundColor: '#FFFFFF',
-        border: '1px solid var(--border-color)',
-        borderRadius: '16px',
-        padding: '24px',
+      <div className="campus-card" style={{
+        padding: '22px 24px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '24px',
-        boxShadow: 'var(--shadow-sm)'
+        gap: '20px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '14px',
-            backgroundColor: 'var(--primary-subtle)',
+            width: '50px',
+            height: '50px',
+            borderRadius: '12px',
+            backgroundColor: '#EFF6FF',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--primary)',
+            color: '#2563EB',
             flexShrink: 0
           }}>
-            <Flame size={28} />
+            <Flame size={26} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)' }}>
-                Deep Work Focus Timer
+              <span style={{ fontSize: '17px', fontWeight: '700', color: '#163A63' }}>
+                Deep Work Focus Sprints
               </span>
-              <span className="badge badge-burgundy">Pomodoro</span>
+              <span className="badge badge-blue">Pomodoro</span>
             </div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              Eliminate distractions and log focused academic sprints.
+            <div style={{ fontSize: '12.5px', color: '#64748B', marginTop: '2px' }}>
+              Eliminate interruptions and log concentrated study blocks.
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
           {/* Time Preset Buttons */}
           <div style={{ display: 'flex', gap: '6px' }}>
             <button
@@ -218,10 +216,10 @@ export default function StudyPlanner() {
               style={{
                 padding: '6px 12px',
                 fontSize: '12px',
-                backgroundColor: timerDuration === 25 * 60 ? 'var(--primary-subtle)' : '#FFFFFF',
-                color: timerDuration === 25 * 60 ? 'var(--primary)' : 'var(--text-secondary)',
-                borderColor: timerDuration === 25 * 60 ? 'var(--primary)' : 'var(--border-color)',
-                fontWeight: timerDuration === 25 * 60 ? '600' : '500'
+                backgroundColor: timerDuration === 25 * 60 ? '#DBEAFE' : '#FFFFFF',
+                color: timerDuration === 25 * 60 ? '#163A63' : '#64748B',
+                borderColor: timerDuration === 25 * 60 ? '#2563EB' : '#DCE5F0',
+                fontWeight: timerDuration === 25 * 60 ? '700' : '500'
               }}
             >
               25m Sprint
@@ -236,10 +234,10 @@ export default function StudyPlanner() {
               style={{
                 padding: '6px 12px',
                 fontSize: '12px',
-                backgroundColor: timerDuration === 50 * 60 ? 'var(--primary-subtle)' : '#FFFFFF',
-                color: timerDuration === 50 * 60 ? 'var(--primary)' : 'var(--text-secondary)',
-                borderColor: timerDuration === 50 * 60 ? 'var(--primary)' : 'var(--border-color)',
-                fontWeight: timerDuration === 50 * 60 ? '600' : '500'
+                backgroundColor: timerDuration === 50 * 60 ? '#DBEAFE' : '#FFFFFF',
+                color: timerDuration === 50 * 60 ? '#163A63' : '#64748B',
+                borderColor: timerDuration === 50 * 60 ? '#2563EB' : '#DCE5F0',
+                fontWeight: timerDuration === 50 * 60 ? '700' : '500'
               }}
             >
               50m Deep Block
@@ -248,11 +246,11 @@ export default function StudyPlanner() {
 
           {/* Digits Display */}
           <div style={{
-            fontSize: '36px',
+            fontSize: '32px',
             fontWeight: '800',
             fontFamily: 'monospace',
-            color: 'var(--primary-dark)',
-            minWidth: '110px',
+            color: '#163A63',
+            minWidth: '100px',
             textAlign: 'center'
           }}>
             {formatTime(timeLeft)}
@@ -263,9 +261,9 @@ export default function StudyPlanner() {
             <button
               onClick={() => setTimerRunning(!timerRunning)}
               className="btn-primary"
-              style={{ padding: '8px 16px' }}
+              style={{ padding: '8px 14px' }}
             >
-              {timerRunning ? <Pause size={15} /> : <Play size={15} />}
+              {timerRunning ? <Pause size={14} /> : <Play size={14} />}
               {timerRunning ? 'Pause' : 'Start Focus'}
             </button>
             <button
@@ -277,15 +275,15 @@ export default function StudyPlanner() {
               style={{ padding: '8px' }}
               title="Reset Timer"
             >
-              <RotateCcw size={15} />
+              <RotateCcw size={14} />
             </button>
           </div>
 
           <div style={{
-            fontSize: '12px',
+            fontSize: '11.5px',
             color: '#166534',
             backgroundColor: '#DCFCE7',
-            padding: '6px 12px',
+            padding: '5px 10px',
             borderRadius: '20px',
             fontWeight: '600'
           }}>
@@ -296,12 +294,12 @@ export default function StudyPlanner() {
 
       {/* Active Plans List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)' }}>
+        <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', margin: 0 }}>
           Active Study Roadmaps ({plans.length})
         </h3>
 
         {loading ? (
-          <div className="campus-card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <div className="campus-card" style={{ padding: '40px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>
             Loading study roadmaps...
           </div>
         ) : plans.length === 0 ? (
@@ -311,15 +309,15 @@ export default function StudyPlanner() {
               No Study Plans Created Yet
             </div>
             <div className="empty-state-desc">
-              Tell CampusMate AI what exam you are preparing for and it will craft a personalized day-by-day milestone roadmap based on your course syllabus.
+              Tell CampusMate AI what exam you are preparing for and it will automatically generate a structured day-by-day milestone roadmap.
             </div>
             <button className="btn-primary" style={{ marginTop: '16px' }} onClick={() => setShowModal(true)}>
-              <Plus size={16} /> Create Your First Plan
+              <Plus size={15} /> Create Your First Roadmap
             </button>
           </div>
         ) : (
           plans.map((plan) => (
-            <div key={plan.id} className="campus-card" style={{ padding: '24px' }}>
+            <div key={plan.id} className="campus-card" style={{ padding: '22px' }}>
               {/* Header */}
               <div style={{
                 display: 'flex',
@@ -330,21 +328,21 @@ export default function StudyPlanner() {
                 marginBottom: '16px'
               }}>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <h4 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h4 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', margin: 0 }}>
                       {plan.subject}
                     </h4>
                     {plan.is_sample && (
                       <span className="badge badge-demo">Demo Plan</span>
                     )}
-                    <span className="badge badge-burgundy">
+                    <span className="badge badge-blue">
                       {plan.total_days} Days Total
                     </span>
-                    <span className="badge badge-grey">
+                    <span className="badge badge-neutral">
                       {plan.daily_hours} hrs/day
                     </span>
                   </div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                  <div style={{ fontSize: '12.5px', color: '#64748B', marginTop: '4px' }}>
                     Target Exam Date: <strong>{plan.target_exam_date}</strong>
                   </div>
                 </div>
@@ -354,19 +352,19 @@ export default function StudyPlanner() {
                     href={`/api/study-plans/${plan.id}/export.ics`}
                     download={`${plan.subject.replace(/\s+/g, '_').toLowerCase()}_study_plan.ics`}
                     className="btn-secondary"
-                    style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none' }}
+                    style={{ padding: '6px 12px', fontSize: '11.5px', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none' }}
                     title="Export Study Milestones to Apple/Google/Outlook Calendar (.ics)"
                   >
-                    <Calendar size={14} color="var(--primary)" />
+                    <Calendar size={13} color="#2563EB" />
                     <span>Export .ics</span>
                   </a>
                   <button
                     onClick={() => handleCopyPlan(plan)}
                     className="btn-secondary"
-                    style={{ padding: '6px 12px', fontSize: '12px' }}
+                    style={{ padding: '6px 12px', fontSize: '11.5px' }}
                     title="Copy Roadmap to Clipboard"
                   >
-                    {copiedId === plan.id ? <Check size={14} color="#166534" /> : <Copy size={14} />}
+                    {copiedId === plan.id ? <Check size={13} color="#166534" /> : <Copy size={13} />}
                     <span>{copiedId === plan.id ? "Copied!" : "Copy Plan"}</span>
                   </button>
                   <button
@@ -375,27 +373,28 @@ export default function StudyPlanner() {
                     style={{ padding: '6px 10px', color: '#991B1B' }}
                     title="Delete Study Plan"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={13} />
                   </button>
                 </div>
               </div>
 
               {/* Progress Bar */}
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '6px' }}>
+              <div style={{ marginBottom: '18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '600', color: '#163A63', marginBottom: '6px' }}>
                   <span>Roadmap Completion</span>
                   <span>{plan.progress_pct}% Completed</span>
                 </div>
                 <div style={{
-                  height: '8px',
-                  backgroundColor: 'var(--bg-subtle)',
+                  height: '7px',
+                  backgroundColor: '#EFF6FF',
+                  border: '1px solid #DBEAFE',
                   borderRadius: '4px',
                   overflow: 'hidden'
                 }}>
                   <div style={{
                     height: '100%',
                     width: `${plan.progress_pct}%`,
-                    backgroundColor: 'var(--primary)',
+                    backgroundColor: '#2563EB',
                     borderRadius: '4px',
                     transition: 'width 0.3s ease'
                   }} />
@@ -404,10 +403,10 @@ export default function StudyPlanner() {
 
               {/* Milestones Timeline */}
               <div>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--primary-dark)', marginBottom: '10px' }}>
+                <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#163A63', marginBottom: '8px' }}>
                   Daily Study Milestones
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {plan.milestones.map((m, mIdx) => (
                     <div
                       key={mIdx}
@@ -415,22 +414,22 @@ export default function StudyPlanner() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        backgroundColor: m.completed ? 'var(--bg-subtle)' : '#FFFFFF',
-                        border: '1px solid var(--border-color)',
+                        padding: '9px 12px',
+                        borderRadius: '6px',
+                        backgroundColor: m.completed ? '#F8FAFC' : '#FFFFFF',
+                        border: '1px solid #DCE5F0',
                         transition: 'all 0.15s ease'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
                         <button
                           onClick={() => handleToggleMilestone(plan.id, mIdx)}
                           style={{
-                            width: '20px',
-                            height: '20px',
-                            borderRadius: '5px',
+                            width: '18px',
+                            height: '18px',
+                            borderRadius: '4px',
                             border: m.completed ? 'none' : '2px solid #CBD5E1',
-                            backgroundColor: m.completed ? 'var(--primary)' : 'transparent',
+                            backgroundColor: m.completed ? '#2563EB' : 'transparent',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -439,26 +438,29 @@ export default function StudyPlanner() {
                           }}
                           aria-label="Toggle milestone"
                         >
-                          {m.completed && <Check size={13} color="#FFFFFF" />}
+                          {m.completed && <Check size={12} color="#FFFFFF" />}
                         </button>
 
-                        <div>
+                        <div style={{ minWidth: 0 }}>
                           <div style={{
                             fontSize: '13px',
                             fontWeight: '600',
-                            color: m.completed ? 'var(--text-secondary)' : 'var(--text-primary)',
-                            textDecoration: m.completed ? 'line-through' : 'none'
+                            color: m.completed ? '#64748B' : '#172B4D',
+                            textDecoration: m.completed ? 'line-through' : 'none',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
                           }}>
                             Day {m.day} &bull; {m.topic}
                           </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                          <div style={{ fontSize: '11px', color: '#64748B' }}>
                             {m.date} &bull; {m.duration_hours} hrs required &bull; {m.notes}
                           </div>
                         </div>
                       </div>
 
-                      <span className={`badge ${m.completed ? 'badge-success' : 'badge-grey'}`}>
-                        {m.completed ? 'Done' : 'Upcoming'}
+                      <span className={`badge ${m.completed ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '10px' }}>
+                        {m.completed ? 'Done' : 'Pending'}
                       </span>
                     </div>
                   ))}
@@ -475,25 +477,25 @@ export default function StudyPlanner() {
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ padding: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
               <div style={{
-                width: '36px',
-                height: '36px',
+                width: '34px',
+                height: '34px',
                 borderRadius: '8px',
-                backgroundColor: 'var(--primary-subtle)',
+                backgroundColor: '#EFF6FF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--primary)'
+                color: '#2563EB'
               }}>
-                <Sparkles size={20} />
+                <Sparkles size={18} />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
+              <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', margin: 0 }}>
                 Generate Adaptive Study Roadmap
               </h3>
             </div>
 
             <form onSubmit={handleCreatePlan} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                   Course / Subject *
                 </label>
                 <input
@@ -508,7 +510,7 @@ export default function StudyPlanner() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     Exam / Target Date *
                   </label>
                   <input
@@ -520,7 +522,7 @@ export default function StudyPlanner() {
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                     Daily Study Commitment (Hours)
                   </label>
                   <input
@@ -536,7 +538,7 @@ export default function StudyPlanner() {
               </div>
 
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '5px' }}>
                   Key Topics or Modules to Cover (One per line)
                 </label>
                 <textarea
@@ -548,7 +550,7 @@ export default function StudyPlanner() {
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
                 <button
                   type="button"
                   className="btn-secondary"
@@ -557,7 +559,7 @@ export default function StudyPlanner() {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
-                  <Sparkles size={15} /> Build Roadmap
+                  <Sparkles size={14} /> Build Roadmap
                 </button>
               </div>
             </form>
