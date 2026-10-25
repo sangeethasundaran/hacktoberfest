@@ -68,8 +68,50 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.02em;
 }
 
-p, span, label {
+p, label {
   color: var(--color-text-primary);
+}
+
+/* Sidebar Navigation Styling */
+.sidebar-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  color: #FFFFFF !important;
+  transition: all 0.15s ease;
+}
+
+.sidebar-nav-link span {
+  color: inherit !important;
+}
+
+.sidebar-nav-link svg {
+  color: inherit !important;
+  flex-shrink: 0;
+}
+
+.sidebar-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+}
+
+.sidebar-nav-link.active {
+  background-color: #FFFFFF !important;
+  color: #7B1123 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar-nav-link.active span {
+  color: #7B1123 !important;
+}
+
+.sidebar-nav-link.active svg {
+  color: #7B1123 !important;
 }
 
 .text-muted {

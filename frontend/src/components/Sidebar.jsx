@@ -123,9 +123,10 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
             fontSize: '11px',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
-            color: '#D1D5DB',
+            color: '#FFFFFF',
+            opacity: 0.85,
             padding: '8px 12px 12px 12px',
-            fontWeight: '600'
+            fontWeight: '700'
           }}>
             Navigation
           </div>
@@ -137,6 +138,7 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  className="sidebar-nav-link"
                   onClick={() => {
                     if (window.innerWidth < 768 && onClose) onClose();
                   }}
@@ -148,24 +150,26 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
                     borderRadius: '8px',
                     textDecoration: 'none',
                     fontSize: '14px',
-                    fontWeight: isActive ? '600' : '400',
-                    color: isActive ? '#7B1123' : '#E5E7EB',
-                    backgroundColor: isActive ? '#FDF2F4' : 'transparent',
+                    fontWeight: isActive ? '700' : '500',
+                    color: isActive ? '#7B1123' : '#FFFFFF',
+                    backgroundColor: isActive ? '#FFFFFF' : 'transparent',
+                    boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.2)' : 'none',
                     transition: 'all 0.15s ease'
                   })}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Icon size={18} />
-                    <span>{item.label}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'inherit' }}>
+                    <Icon size={18} style={{ color: 'inherit', flexShrink: 0 }} />
+                    <span style={{ color: 'inherit', fontWeight: 'inherit' }}>{item.label}</span>
                   </div>
                   {item.badge && (
                     <span style={{
-                      backgroundColor: 'rgba(253, 242, 244, 0.2)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.22)',
                       color: '#FFFFFF',
                       fontSize: '10px',
-                      padding: '2px 6px',
+                      padding: '2px 8px',
                       borderRadius: '4px',
-                      fontWeight: '600'
+                      fontWeight: '700',
+                      letterSpacing: '0.04em'
                     }}>
                       {item.badge}
                     </span>
@@ -202,7 +206,7 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
               <div style={{ fontSize: '11px', fontWeight: '600', color: isDemo ? '#FDE68A' : '#DDF5E5' }}>
                 {isDemo ? 'Autonomous Agent (Demo)' : 'Live AI Agent Connected'}
               </div>
-              <div style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.7)' }}>
+              <div style={{ fontSize: '10px', color: '#E5E7EB', opacity: 0.9 }}>
                 {isDemo ? 'Tool calls active on SQLite' : 'External LLM API active'}
               </div>
             </div>
@@ -216,7 +220,7 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
               borderRadius: '50%',
               backgroundColor: '#FDF2F4',
               color: '#7B1123',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
+              border: '2px solid rgba(255, 255, 255, 0.4)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -230,7 +234,7 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
               <div style={{ fontSize: '13px', fontWeight: '600', color: '#FFFFFF', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                 {userSettings?.student_name || 'Alex Chen'}
               </div>
-              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)' }}>
+              <div style={{ fontSize: '11px', color: '#E5E7EB', opacity: 0.9 }}>
                 {userSettings?.student_id || 'CS-2024-8842'}
               </div>
             </div>
