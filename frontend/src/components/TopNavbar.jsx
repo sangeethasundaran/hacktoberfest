@@ -92,7 +92,7 @@ export default function TopNavbar({ onMenuToggle, userSettings }) {
         const [tasksRes, noticesRes, eventsRes, docsRes] = await Promise.all([
           fetch('/api/tasks').catch(() => null),
           fetch('/api/notices').catch(() => null),
-          fetch('/api/events?status=all').catch(() => null),
+          fetch('/api/events?status=upcoming').catch(() => null),
           fetch('/api/documents').catch(() => null)
         ]);
 
@@ -110,7 +110,7 @@ export default function TopNavbar({ onMenuToggle, userSettings }) {
         ).slice(0, 3);
 
         const matchedEvents = eventsData.filter(e => 
-          e.title.toLowerCase().includes(q) || (e.organizer && e.organizer.toLowerCase().includes(q))
+          (e.is_upcoming && !e.is_expired) && (e.title.toLowerCase().includes(q) || (e.organizer && e.organizer.toLowerCase().includes(q)))
         ).slice(0, 3);
 
         const matchedDocs = docsData.filter(d => 

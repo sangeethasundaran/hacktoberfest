@@ -9,12 +9,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from database import engine, Base, get_db
 from models import Task, StudyPlan, ScheduleItem, Notice, ClubEvent, CampusDocument, UserSettings, AgentInteraction
 import schemas
 import tools
 import cce_service
+from event_expiry import evaluate_event_expiry, get_current_college_time
 from agent import CampusAgent, get_current_ai_settings
 from rag import extract_text_from_pdf, extract_notice_bulletins, ingest_campus_document
 from seed_data import seed_database, clear_sample_data
@@ -75,8 +77,9 @@ def get_dashboard_data(db: Session = Depends(get_db)):
     pending_tasks = db.query(Task).filter(Task.status != "Completed").count()
     completed_tasks = db.query(Task).filter(Task.status == "Completed").count()
     upcoming_exams = db.query(Task).filter(Task.category == "Exam", Task.status != "Completed").count()
-    # Genuine count of events happening today or in the future:
-    upcoming_events = db.query(ClubEvent).filter(ClubEvent.date >= today_str).count()
+    # Genuine count of active upcoming events (excludes ended/expired events and invalid dates):
+    all_events = db.query(ClubEvent).all()
+    upcoming_events = sum(1 for e in all_events if evaluate_event_expiry(e)["is_upcoming"])
 
     recommendation = tools.tool_generate_smart_recommendations(db)
 
@@ -720,27 +723,63 @@ async def upload_notice_pdf(
 def get_events(
     category: Optional[str] = None, 
     status: Optional[str] = "all", # 'upcoming', 'past', 'all'
+    registration: Optional[str] = None, # 'open'
     db: Session = Depends(get_db)
 ):
-    today_str = date.today().strftime("%Y-%m-%d")
     query = db.query(ClubEvent)
-    if category and category != "All":
-        query = query.filter(ClubEvent.category == category)
-    
+    if category and category.strip() and category.strip().lower() != "all":
+        cat = category.strip().lower()
+        # Handle matching across existing and required categories:
+        # Hackathons, Workshops, Competitions, Technical Events, Seminars, Conferences, Cultural, Entrepreneurship, Social, Academic
+        if "hackathon" in cat:
+            query = query.filter(or_(ClubEvent.category.ilike("%Hackathon%"), ClubEvent.title.ilike("%Hackathon%"), ClubEvent.title.ilike("%Hack%"), ClubEvent.tags.ilike("%Hackathon%")))
+        elif "workshop" in cat:
+            query = query.filter(or_(ClubEvent.category.ilike("%Workshop%"), ClubEvent.title.ilike("%Workshop%"), ClubEvent.title.ilike("%Bootcamp%"), ClubEvent.tags.ilike("%Workshop%")))
+        elif "competition" in cat:
+            query = query.filter(or_(ClubEvent.category.ilike("%Competition%"), ClubEvent.title.ilike("%Championship%"), ClubEvent.title.ilike("%Contest%"), ClubEvent.title.ilike("%Ideathon%"), ClubEvent.tags.ilike("%Competition%")))
+        elif "technical" in cat:
+            query = query.filter(or_(ClubEvent.category.ilike("%Technical%"), ClubEvent.tags.ilike("%Technical%")))
+        elif "seminar" in cat:
+            query = query.filter(or_(ClubEvent.category.ilike("%Seminar%"), ClubEvent.title.ilike("%Seminar%"), ClubEvent.title.ilike("%Programme%"), ClubEvent.tags.ilike("%Seminar%")))
+        elif "conference" in cat:
+            query = query.filter(or_(ClubEvent.category.ilike("%Conference%"), ClubEvent.title.ilike("%Conference%"), ClubEvent.title.ilike("%Conclave%"), ClubEvent.tags.ilike("%Conference%")))
+        else:
+            query = query.filter(or_(ClubEvent.category.ilike(f"%{category.strip()}%"), ClubEvent.tags.ilike(f"%{category.strip()}%")))
+
+    all_raw = query.all()
+    evaluated = []
+    for ev in all_raw:
+        info = evaluate_event_expiry(ev)
+        # Dynamically attach lifecycle and registration fields
+        ev.is_upcoming = info["is_upcoming"]
+        ev.is_expired = info["is_expired"]
+        ev.is_ongoing = info["is_ongoing"]
+        ev.is_registration_closed = info["is_registration_closed"]
+        ev.can_register = info["can_register"]
+        evaluated.append((ev, info))
+
+    # Open registration opportunities filter
+    if registration == "open":
+        open_opps = [item[0] for item in evaluated if item[1]["can_register"] and item[1]["is_upcoming"]]
+        open_opps.sort(key=lambda x: (x.date or "", x.time or ""))
+        return open_opps
+
     if status == "upcoming":
-        query = query.filter(ClubEvent.date >= today_str)
-        return query.order_by(ClubEvent.date.asc()).all()
+        # Strict rule: only non-expired, valid upcoming events (including ongoing events)
+        upcoming = [item[0] for item in evaluated if item[1]["is_upcoming"]]
+        upcoming.sort(key=lambda x: (x.date or "", x.time or ""))
+        return upcoming
     elif status == "past":
-        query = query.filter(ClubEvent.date < today_str)
-        return query.order_by(ClubEvent.date.desc()).all()
-        
-    # 'all': Upcoming first in ascending order, then Past in descending order
-    all_events = query.all()
-    upcoming = [e for e in all_events if e.date >= today_str]
-    past = [e for e in all_events if e.date < today_str]
-    upcoming.sort(key=lambda x: x.date)
-    past.sort(key=lambda x: x.date, reverse=True)
-    return upcoming + past
+        # Strict rule: only expired/ended events or past events
+        past = [item[0] for item in evaluated if item[1]["is_expired"]]
+        past.sort(key=lambda x: (x.date or ""), reverse=True)
+        return past
+    else: # "all"
+        upcoming = [item[0] for item in evaluated if item[1]["is_upcoming"]]
+        past = [item[0] for item in evaluated if item[1]["is_expired"]]
+        upcoming.sort(key=lambda x: (x.date or "", x.time or ""))
+        past.sort(key=lambda x: (x.date or ""), reverse=True)
+        return upcoming + past
 
 @app.post("/api/events/{event_id}/toggle-register")
 def toggle_event_registration(event_id: int, db: Session = Depends(get_db)):
@@ -748,19 +787,35 @@ def toggle_event_registration(event_id: int, db: Session = Depends(get_db)):
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     
+    info = evaluate_event_expiry(event)
+
+    # If student is attempting to register:
+    if not event.is_registered:
+        if info["is_expired"]:
+            raise HTTPException(
+                status_code=400, 
+                detail="This event has already ended. It is no longer open for registration."
+            )
+        if info["is_registration_closed"]:
+            raise HTTPException(
+                status_code=400, 
+                detail="The registration deadline for this event has passed. Opportunity is closed."
+            )
+    
     event.is_registered = not event.is_registered
     
     # If registered, also add to student's schedule!
+    sched_title = f"{event.title} ({event.club_name})"
     if event.is_registered:
         existing = db.query(ScheduleItem).filter(
-            ScheduleItem.title == event.title,
+            ScheduleItem.title == sched_title,
             ScheduleItem.date == event.date
         ).first()
         if not existing:
             sched = ScheduleItem(
-                title=f"{event.title} ({event.club_name})",
+                title=sched_title,
                 start_time=event.time or "09:00 AM",
-                end_time="--",
+                end_time=event.end_time or "--",
                 category="Event",
                 date=event.date,
                 location=event.venue or event.location,
@@ -768,6 +823,14 @@ def toggle_event_registration(event_id: int, db: Session = Depends(get_db)):
                 notes=f"Registered for campus event: {event.description[:100]} | Source: {event.source_url}"
             )
             db.add(sched)
+    else:
+        # If unregistering, remove from student's schedule
+        existing = db.query(ScheduleItem).filter(
+            ScheduleItem.title == sched_title,
+            ScheduleItem.date == event.date
+        ).first()
+        if existing:
+            db.delete(existing)
     
     db.commit()
     db.refresh(event)
@@ -793,10 +856,10 @@ def trigger_cce_sync(db: Session = Depends(get_db)):
 @app.get("/api/sync/status")
 def get_cce_sync_status(db: Session = Depends(get_db)):
     settings = db.query(UserSettings).first()
-    today_str = date.today().strftime("%Y-%m-%d")
-    total = db.query(ClubEvent).count()
-    upcoming = db.query(ClubEvent).filter(ClubEvent.date >= today_str).count()
-    past = db.query(ClubEvent).filter(ClubEvent.date < today_str).count()
+    all_events = db.query(ClubEvent).all()
+    upcoming = sum(1 for e in all_events if evaluate_event_expiry(e)["is_upcoming"])
+    past = sum(1 for e in all_events if evaluate_event_expiry(e)["is_expired"])
+    total = len(all_events)
     
     return {
         "last_synced_at": settings.last_cce_sync if (settings and settings.last_cce_sync) else "Not synced yet",
@@ -1037,11 +1100,9 @@ def get_notifications(db: Session = Depends(get_db)):
             priority="Normal"
         ))
         
-    # 4. Registered Club Events
-    reg_events = db.query(ClubEvent).filter(
-        ClubEvent.is_registered == True,
-        ClubEvent.date >= today_str
-    ).order_by(ClubEvent.date.asc()).limit(2).all()
+    # 4. Registered Club Events (non-expired active events only)
+    all_reg = db.query(ClubEvent).filter(ClubEvent.is_registered == True).all()
+    reg_events = [ev for ev in all_reg if evaluate_event_expiry(ev)["is_upcoming"]][:2]
     for ev in reg_events:
         notifications.append(schemas.NotificationItem(
             id=f"event-{ev.id}",

@@ -6,6 +6,7 @@ from datetime import datetime, date, timezone
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 from models import ClubEvent, UserSettings, Notice
+from event_expiry import evaluate_event_expiry
 
 # Official public URLs for Christ College of Engineering (Autonomous), Irinjalakuda
 CCE_PRIMARY_URL = "https://cce.edu.in/"
@@ -704,8 +705,9 @@ def sync_cce_data(db: Session, force_refresh: bool = False) -> Dict[str, Any]:
 
     # Step 6: Count totals for reporting
     total_events = db.query(ClubEvent).count()
-    upcoming_events = db.query(ClubEvent).filter(ClubEvent.date >= today_date).count()
-    past_events = db.query(ClubEvent).filter(ClubEvent.date < today_date).count()
+    all_evs = db.query(ClubEvent).all()
+    upcoming_events = sum(1 for e in all_evs if evaluate_event_expiry(e)["is_upcoming"])
+    past_events = sum(1 for e in all_evs if evaluate_event_expiry(e)["is_expired"])
 
     return {
         "success": True,

@@ -16,6 +16,8 @@ def run_migration():
     new_ce_cols = [
         ('venue', "VARCHAR(150) DEFAULT 'Christ College of Engineering, Irinjalakuda'"),
         ('organizer', "VARCHAR(150) DEFAULT 'CCE'"),
+        ('end_date', "VARCHAR(50) DEFAULT ''"),
+        ('end_time', "VARCHAR(50) DEFAULT ''"),
         ('registration_deadline', "VARCHAR(50) DEFAULT ''"),
         ('registration_link', "VARCHAR(300) DEFAULT ''"),
         ('source_url', "VARCHAR(300) DEFAULT 'https://cce.edu.in/'"),

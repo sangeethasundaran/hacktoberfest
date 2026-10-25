@@ -107,6 +107,8 @@ class ClubEventResponse(BaseModel):
     category: str
     date: str
     time: str
+    end_date: Optional[str] = ""
+    end_time: Optional[str] = ""
     location: str
     venue: Optional[str] = ""
     organizer: Optional[str] = ""
@@ -118,6 +120,10 @@ class ClubEventResponse(BaseModel):
     is_verified: bool = True
     verification_notes: Optional[str] = "Official CCE Publication"
     is_upcoming: bool = True
+    is_expired: bool = False
+    is_ongoing: bool = False
+    is_registration_closed: bool = False
+    can_register: bool = True
     is_registered: bool = False
     is_sample: bool = False
     tags: str

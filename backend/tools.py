@@ -3,7 +3,9 @@ import re
 from datetime import datetime, date, timedelta
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from models import Task, StudyPlan, ScheduleItem, Notice, ClubEvent, CampusDocument
+from event_expiry import evaluate_event_expiry
 
 def tool_create_task(
     db: Session,
@@ -287,21 +289,22 @@ def tool_get_upcoming_events(
     status: Optional[str] = "upcoming"
 ) -> Dict[str, Any]:
     """Fetches verified campus club meetings, workshops, hackathons, and activities from Christ College of Engineering (Autonomous), Irinjalakuda."""
-    today_str = date.today().strftime("%Y-%m-%d")
     query = db.query(ClubEvent)
     
     if category and category.lower() != "all":
-        query = query.filter(ClubEvent.category.ilike(f"%{category}%"))
+        query = query.filter(or_(ClubEvent.category.ilike(f"%{category}%"), ClubEvent.tags.ilike(f"%{category}%")))
         
-    if status == "upcoming":
-        query = query.filter(ClubEvent.date >= today_str)
-    elif status == "past":
-        query = query.filter(ClubEvent.date < today_str)
-        
-    events = query.order_by(ClubEvent.date.asc()).all()
-
-    results = [
-        {
+    all_events = query.all()
+    filtered_events = []
+    
+    for e in all_events:
+        info = evaluate_event_expiry(e)
+        if status == "upcoming" and not info["is_upcoming"]:
+            continue
+        if status == "past" and not info["is_expired"]:
+            continue
+            
+        filtered_events.append({
             "id": e.id,
             "title": e.title,
             "club_name": e.club_name,
@@ -309,6 +312,8 @@ def tool_get_upcoming_events(
             "category": e.category,
             "date": e.date,
             "time": e.time,
+            "end_date": getattr(e, "end_date", ""),
+            "end_time": getattr(e, "end_time", ""),
             "location": e.location,
             "venue": e.venue or e.location,
             "description": e.description,
@@ -318,17 +323,25 @@ def tool_get_upcoming_events(
             "source_name": e.source_name or "Christ College of Engineering Official Portal",
             "is_verified": e.is_verified,
             "verification_notes": e.verification_notes or "Verified Official Publication",
-            "is_upcoming": (e.date >= today_str),
+            "is_upcoming": info["is_upcoming"],
+            "is_expired": info["is_expired"],
+            "is_ongoing": info["is_ongoing"],
+            "is_registration_closed": info["is_registration_closed"],
+            "can_register": info["can_register"],
             "is_registered": e.is_registered,
             "is_sample": getattr(e, "is_sample", False)
-        }
-        for e in events
-    ]
+        })
+
+    if status == "upcoming":
+        filtered_events.sort(key=lambda x: (x["date"] or "", x["time"] or ""))
+    else:
+        filtered_events.sort(key=lambda x: (x["date"] or ""), reverse=True)
+
     return {
-        "count": len(results),
+        "count": len(filtered_events),
         "status_filter": status,
         "official_source": "https://cce.edu.in/",
-        "events": results
+        "events": filtered_events
     }
 
 def tool_generate_smart_recommendations(db: Session) -> Dict[str, Any]:

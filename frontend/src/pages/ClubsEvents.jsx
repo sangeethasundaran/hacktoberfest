@@ -18,12 +18,130 @@ import {
   Globe
 } from 'lucide-react';
 
+// Real-time client-side event lifecycle and expiry evaluator
+function getClientEventStatus(event, now = new Date()) {
+  if (!event.date || event.date.trim() === '' || event.date.toLowerCase() === 'tba') {
+    return {
+      isValidDate: false,
+      isUpcoming: false,
+      isExpired: true,
+      isOngoing: false,
+      isRegistrationClosed: true,
+      canRegister: false,
+      badgeText: 'Invalid Date',
+      badgeClass: 'badge-neutral'
+    };
+  }
+
+  // Parse start date (YYYY-MM-DD)
+  const parts = event.date.split('-');
+  if (parts.length < 3) {
+    return {
+      isValidDate: false,
+      isUpcoming: false,
+      isExpired: true,
+      isOngoing: false,
+      isRegistrationClosed: true,
+      canRegister: false,
+      badgeText: 'Invalid Date',
+      badgeClass: 'badge-neutral'
+    };
+  }
+
+  const [year, month, day] = parts.map(Number);
+  let startHour = 0, startMin = 0;
+  if (event.time && event.time.includes(':')) {
+    const match = event.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (match) {
+      let h = parseInt(match[1], 10);
+      const m = parseInt(match[2], 10);
+      const mer = match[3] ? match[3].toUpperCase() : null;
+      if (mer === 'PM' && h < 12) h += 12;
+      else if (mer === 'AM' && h === 12) h = 0;
+      startHour = h;
+      startMin = m;
+    }
+  }
+
+  const startDate = new Date(year, month - 1, day, startHour, startMin, 0);
+
+  // Parse end date & end time
+  let endDate = new Date(year, month - 1, day, 23, 59, 59);
+  if (event.end_date && event.end_date.includes('-')) {
+    const [ey, em, ed] = event.end_date.split('-').map(Number);
+    if (ey && em && ed) {
+      endDate = new Date(ey, em - 1, ed, 23, 59, 59);
+    }
+  }
+
+  if (event.end_time && event.end_time.includes(':')) {
+    const matchE = event.end_time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (matchE) {
+      let eh = parseInt(matchE[1], 10);
+      const em = parseInt(matchE[2], 10);
+      const emer = matchE[3] ? matchE[3].toUpperCase() : null;
+      if (emer === 'PM' && eh < 12) eh += 12;
+      else if (emer === 'AM' && eh === 12) eh = 0;
+      endDate.setHours(eh, em, 0);
+    }
+  }
+
+  const nowMs = now.getTime();
+  const isExpired = nowMs > endDate.getTime();
+  const isOngoing = !isExpired && (nowMs >= startDate.getTime() && nowMs <= endDate.getTime());
+  const isUpcoming = !isExpired;
+
+  // Registration deadline check
+  let isRegistrationClosed = isExpired;
+  if (event.registration_deadline && event.registration_deadline.includes('-')) {
+    const [ry, rm, rd] = event.registration_deadline.split('-').map(Number);
+    if (ry && rm && rd) {
+      const regDeadlineDate = new Date(ry, rm - 1, rd, 23, 59, 59);
+      if (nowMs > regDeadlineDate.getTime()) {
+        isRegistrationClosed = true;
+      }
+    }
+  } else {
+    // If no registration deadline, use event start
+    if (nowMs >= startDate.getTime()) {
+      isRegistrationClosed = true;
+    }
+  }
+
+  const canRegister = !isExpired && !isRegistrationClosed;
+
+  let badgeText = 'Upcoming';
+  let badgeClass = 'badge-blue';
+  if (isExpired) {
+    badgeText = 'Event Ended';
+    badgeClass = 'badge-neutral';
+  } else if (isOngoing) {
+    badgeText = 'Ongoing Now';
+    badgeClass = 'badge-success';
+  } else if (isRegistrationClosed) {
+    badgeText = 'Registration Closed';
+    badgeClass = 'badge-warning';
+  }
+
+  return {
+    isValidDate: true,
+    isUpcoming,
+    isExpired,
+    isOngoing,
+    isRegistrationClosed,
+    canRegister,
+    badgeText,
+    badgeClass
+  };
+}
+
 export default function ClubsEvents() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'past' | 'clubs'
+  const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'open' | 'past' | 'clubs'
   const [syncing, setSyncing] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [syncData, setSyncData] = useState({
     last_synced_at: '',
     status: '',
@@ -32,6 +150,14 @@ export default function ClubsEvents() {
     past_events: 0
   });
   const [syncFeedback, setSyncFeedback] = useState(null);
+
+  // Recalculate event visibility automatically on timer without requiring page reload
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchSyncStatus = async () => {
     try {
@@ -48,11 +174,17 @@ export default function ClubsEvents() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      let statusParam = 'all';
-      if (activeTab === 'upcoming') statusParam = 'upcoming';
-      else if (activeTab === 'past') statusParam = 'past';
+      let url = '/api/events?';
+      if (activeTab === 'open') {
+        url += 'registration=open';
+      } else if (activeTab === 'upcoming') {
+        url += 'status=upcoming';
+      } else if (activeTab === 'past') {
+        url += 'status=past';
+      } else {
+        url += 'status=all';
+      }
 
-      let url = `/api/events?status=${statusParam}`;
       if (selectedCategory !== 'All') {
         url += `&category=${encodeURIComponent(selectedCategory)}`;
       }
@@ -77,6 +209,16 @@ export default function ClubsEvents() {
     if (activeTab !== 'clubs') {
       fetchEvents();
     }
+  }, [selectedCategory, activeTab]);
+
+  // Periodic background refresh every 60 seconds
+  useEffect(() => {
+    if (activeTab === 'clubs') return;
+    const pollInterval = setInterval(() => {
+      fetchEvents();
+      fetchSyncStatus();
+    }, 60000);
+    return () => clearInterval(pollInterval);
   }, [selectedCategory, activeTab]);
 
   const handleManualSync = async () => {
@@ -112,15 +254,38 @@ export default function ClubsEvents() {
   const handleToggleRegister = async (eventId) => {
     try {
       const res = await fetch(`/api/events/${eventId}/toggle-register`, { method: 'POST' });
+      const data = await res.json();
       if (res.ok) {
         fetchEvents();
+      } else {
+        setSyncFeedback({
+          type: 'error',
+          message: data.detail || 'Registration is closed for this event.'
+        });
+        setTimeout(() => setSyncFeedback(null), 5000);
       }
     } catch (err) {
       console.error(err);
+      setSyncFeedback({
+        type: 'error',
+        message: 'Unable to update event registration.'
+      });
+      setTimeout(() => setSyncFeedback(null), 5000);
     }
   };
 
-  const categories = ['All', 'Technical', 'Cultural', 'Entrepreneurship', 'Social', 'Academic'];
+  const categories = [
+    'All',
+    'Hackathons',
+    'Workshops',
+    'Competitions',
+    'Technical Events',
+    'Seminars',
+    'Conferences',
+    'Cultural',
+    'Entrepreneurship',
+    'Social'
+  ];
 
   // Official student organizations at Christ College of Engineering (Autonomous), Irinjalakuda
   const clubsDirectory = [
@@ -284,9 +449,9 @@ export default function ClubsEvents() {
         </div>
       </div>
 
-      {/* Navigation Tabs (Upcoming vs Past vs Clubs) */}
+      {/* Navigation Tabs (Upcoming vs Open Registration vs Past vs Clubs) */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', backgroundColor: '#F1F5F9', padding: '4px', borderRadius: '8px', border: '1px solid #DCE5F0' }}>
+        <div style={{ display: 'flex', backgroundColor: '#F1F5F9', padding: '4px', borderRadius: '8px', border: '1px solid #DCE5F0', flexWrap: 'wrap', gap: '4px' }}>
           <button
             onClick={() => setActiveTab('upcoming')}
             style={{
@@ -302,6 +467,23 @@ export default function ClubsEvents() {
             }}
           >
             Upcoming Events ({syncData.upcoming_events || events.filter(e => e.is_upcoming).length || '0'})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('open')}
+            style={{
+              padding: '7px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              fontSize: '13px',
+              fontWeight: activeTab === 'open' ? '700' : '500',
+              backgroundColor: activeTab === 'open' ? '#FFFFFF' : 'transparent',
+              color: activeTab === 'open' ? '#163A63' : '#64748B',
+              boxShadow: activeTab === 'open' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              cursor: 'pointer'
+            }}
+          >
+            Open for Registration
           </button>
 
           <button
@@ -341,7 +523,7 @@ export default function ClubsEvents() {
 
         {/* Category Filters (when viewing events) */}
         {activeTab !== 'clubs' && (
-          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
+          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px', maxWidth: '100%' }}>
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -350,6 +532,7 @@ export default function ClubsEvents() {
                 style={{
                   padding: '6px 14px',
                   fontSize: '12px',
+                  whiteSpace: 'nowrap',
                   backgroundColor: selectedCategory === cat ? '#DBEAFE' : '#FFFFFF',
                   color: selectedCategory === cat ? '#163A63' : '#64748B',
                   borderColor: selectedCategory === cat ? '#2563EB' : '#DCE5F0',
@@ -379,11 +562,17 @@ export default function ClubsEvents() {
             <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
               <Calendar className="empty-state-icon" />
               <div className="empty-state-title">
-                {activeTab === 'upcoming' ? 'No Upcoming Events Scheduled' : 'No Events Found'}
+                {activeTab === 'upcoming' 
+                  ? 'No Upcoming Events Scheduled' 
+                  : activeTab === 'open' 
+                  ? 'No Open Registration Opportunities' 
+                  : 'No Events Found'}
               </div>
               <div className="empty-state-desc">
                 {activeTab === 'upcoming' 
                   ? 'There are currently no upcoming events matching this filter. Check past highlights or sync with the CCE portal.'
+                  : activeTab === 'open'
+                  ? 'There are currently no events open for registration in this category. Deadlines may have passed or events concluded.'
                   : 'No past event archives match your current category selection.'}
               </div>
               <button className="btn-primary" style={{ marginTop: '14px' }} onClick={handleManualSync}>
@@ -392,7 +581,9 @@ export default function ClubsEvents() {
             </div>
           ) : (
             events.map((event) => {
-              const isPast = !event.is_upcoming;
+              const statusInfo = getClientEventStatus(event, currentTime);
+              const isPast = statusInfo.isExpired;
+
               return (
                 <div
                   key={event.id}
@@ -402,8 +593,9 @@ export default function ClubsEvents() {
                     flexDirection: 'column',
                     justifyContent: 'space-between',
                     padding: '20px',
-                    opacity: isPast ? 0.92 : 1,
-                    position: 'relative'
+                    opacity: isPast ? 0.88 : 1,
+                    position: 'relative',
+                    borderColor: statusInfo.isOngoing ? '#86EFAC' : '#DCE5F0'
                   }}
                 >
                   <div>
@@ -413,20 +605,42 @@ export default function ClubsEvents() {
                         <span style={{ fontSize: '11px', fontWeight: '700', color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           {event.organizer || event.club_name}
                         </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
                           <span className="badge badge-neutral" style={{ fontSize: '10px' }}>
                             {event.category}
                           </span>
                           {event.is_sample && (
                             <span className="badge badge-demo" style={{ fontSize: '9.5px', padding: '1px 5px' }}>Demo</span>
                           )}
-                          {event.is_upcoming ? (
-                            <span className="badge badge-blue" style={{ fontSize: '10px' }}>
-                              Upcoming
+                          
+                          {/* Lifecycle Badges: Ongoing Now vs Registration Closed vs Upcoming vs Ended */}
+                          {statusInfo.isOngoing ? (
+                            <span 
+                              className="badge badge-success" 
+                              style={{ 
+                                fontSize: '10px', 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '5px',
+                                backgroundColor: '#DCFCE7',
+                                color: '#166534',
+                                borderColor: '#86EFAC'
+                              }}
+                            >
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#16A34A', display: 'inline-block' }}></span>
+                              Ongoing Now
+                            </span>
+                          ) : isPast ? (
+                            <span className="badge badge-neutral" style={{ fontSize: '10px', backgroundColor: '#F1F5F9', color: '#64748B' }}>
+                              Event Ended
+                            </span>
+                          ) : statusInfo.isRegistrationClosed ? (
+                            <span className="badge badge-warning" style={{ fontSize: '10px', backgroundColor: '#FEF3C7', color: '#B45309', borderColor: '#FDE68A' }}>
+                              Registration Closed
                             </span>
                           ) : (
-                            <span className="badge badge-neutral" style={{ fontSize: '10px' }}>
-                              Past Event
+                            <span className="badge badge-blue" style={{ fontSize: '10px' }}>
+                              Registration Open
                             </span>
                           )}
                         </div>
@@ -486,9 +700,18 @@ export default function ClubsEvents() {
                         <span>{event.venue || event.location || "Christ College of Engineering, Irinjalakuda"}</span>
                       </div>
                       {event.registration_deadline && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#D97706', fontWeight: '500' }}>
-                          <Clock size={13} color="#D97706" /> 
-                          <span>Deadline: <strong>{event.registration_deadline}</strong></span>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '7px', 
+                          color: statusInfo.isRegistrationClosed ? '#B45309' : '#059669', 
+                          fontWeight: '500' 
+                        }}>
+                          <Clock size={13} color={statusInfo.isRegistrationClosed ? '#B45309' : '#059669'} /> 
+                          <span>
+                            Registration: <strong>{event.registration_deadline}</strong>
+                            {statusInfo.isRegistrationClosed && !isPast && " (Closed)"}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -533,19 +756,25 @@ export default function ClubsEvents() {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       paddingTop: '12px',
-                      borderTop: '1px solid #DCE5F0'
+                      borderTop: '1px solid #DCE5F0',
+                      gap: '8px',
+                      flexWrap: 'wrap'
                     }}>
                       <span style={{ fontSize: '11.5px', color: '#64748B' }}>
                         {event.is_registered 
                           ? "✓ Scheduled on your Student Calendar" 
-                          : (event.registration_link ? "Official Link Available" : "CCE Student Entry")}
+                          : isPast
+                          ? "Concluded event archive"
+                          : statusInfo.isRegistrationClosed
+                          ? "Registration is currently closed"
+                          : (event.registration_link ? "Official Link Open" : "CCE Student Entry Open")}
                       </span>
 
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         {event.registration_link && (
                           <a
-                            href={event.registration_link}
-                            target="_blank"
+                            href={statusInfo.canRegister ? event.registration_link : '#'}
+                            target={statusInfo.canRegister ? "_blank" : undefined}
                             rel="noreferrer"
                             className="btn-secondary"
                             style={{
@@ -554,37 +783,86 @@ export default function ClubsEvents() {
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
-                              textDecoration: 'none'
+                              textDecoration: 'none',
+                              opacity: statusInfo.canRegister ? 1 : 0.6,
+                              cursor: statusInfo.canRegister ? 'pointer' : 'not-allowed'
                             }}
                           >
-                            <ExternalLink size={11} /> Register Link
+                            <ExternalLink size={11} /> 
+                            {statusInfo.canRegister ? "Register Link" : "Link (Closed)"}
                           </a>
                         )}
 
-                        <button
-                          onClick={() => handleToggleRegister(event.id)}
-                          className={event.is_registered ? "btn-secondary" : "btn-primary"}
-                          style={{
-                            padding: '5px 12px',
-                            fontSize: '11.5px',
-                            backgroundColor: event.is_registered ? '#DCFCE7' : '#2563EB',
-                            color: event.is_registered ? '#166534' : '#FFFFFF',
-                            borderColor: event.is_registered ? '#BBF7D0' : 'transparent',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          {event.is_registered ? (
-                            <>
-                              <Check size={12} /> RSVP Confirmed
-                            </>
-                          ) : (
-                            <>
-                              <Ticket size={12} /> RSVP to Schedule
-                            </>
-                          )}
-                        </button>
+                        {event.is_registered ? (
+                          <button
+                            onClick={() => handleToggleRegister(event.id)}
+                            className="btn-secondary"
+                            title="Click to cancel your calendar registration"
+                            style={{
+                              padding: '5px 12px',
+                              fontSize: '11.5px',
+                              backgroundColor: '#DCFCE7',
+                              color: '#166534',
+                              borderColor: '#BBF7D0',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Check size={12} /> RSVP Confirmed
+                          </button>
+                        ) : isPast ? (
+                          <button
+                            disabled
+                            className="btn-secondary"
+                            style={{
+                              padding: '5px 12px',
+                              fontSize: '11.5px',
+                              backgroundColor: '#F1F5F9',
+                              color: '#94A3B8',
+                              borderColor: '#E2E8F0',
+                              cursor: 'not-allowed',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            Event Ended
+                          </button>
+                        ) : statusInfo.isRegistrationClosed ? (
+                          <button
+                            disabled
+                            className="btn-secondary"
+                            title="Registration deadline has passed"
+                            style={{
+                              padding: '5px 12px',
+                              fontSize: '11.5px',
+                              backgroundColor: '#FEF3C7',
+                              color: '#B45309',
+                              borderColor: '#FDE68A',
+                              cursor: 'not-allowed',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            Registration Closed
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleToggleRegister(event.id)}
+                            className="btn-primary"
+                            style={{
+                              padding: '5px 12px',
+                              fontSize: '11.5px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Ticket size={12} /> RSVP to Schedule
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

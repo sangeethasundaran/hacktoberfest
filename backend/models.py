@@ -76,6 +76,8 @@ class ClubEvent(Base):
     category = Column(String(60), default="Technical")  # Technical, Cultural, Sports, Entrepreneurship, Social
     date = Column(String(50), nullable=False)
     time = Column(String(50), default="TBA")
+    end_date = Column(String(50), default="")
+    end_time = Column(String(50), default="")
     location = Column(String(150), default="Christ College of Engineering, Irinjalakuda")
     venue = Column(String(150), default="Christ College of Engineering, Irinjalakuda")
     organizer = Column(String(150), default="CCE")

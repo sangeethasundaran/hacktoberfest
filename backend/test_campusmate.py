@@ -315,5 +315,142 @@ def test_dashboard_velocity_and_workload():
     assert "course_workload" in data
     assert isinstance(data["course_workload"], list)
 
+def test_event_automatic_expiry_and_registration_lifecycle():
+    from database import get_db
+    from models import ClubEvent
+    db = next(get_db())
+    
+    # Clean up any leftover test events
+    db.query(ClubEvent).filter(ClubEvent.title.like("TEST_%")).delete()
+    db.commit()
+
+    # 1. Upcoming Event with Open Registration (in November 2026)
+    ev_upcoming = ClubEvent(
+        title="TEST_Upcoming_Hackathon_2026",
+        club_name="IEEE CCE",
+        category="Hackathons",
+        date="2026-11-20",
+        time="09:00 AM",
+        registration_deadline="2026-11-15",
+        venue="Auditorium",
+        source_url="https://cce.edu.in/",
+        is_verified=True
+    )
+    # 2. Upcoming Event with Registration Closed (event in December, deadline passed Oct 10)
+    ev_reg_closed = ClubEvent(
+        title="TEST_RegClosed_Workshop_2026",
+        club_name="CSI CCE",
+        category="Workshops",
+        date="2026-12-05",
+        time="10:00 AM",
+        registration_deadline="2026-10-10",
+        venue="Lab 3",
+        source_url="https://cce.edu.in/",
+        is_verified=True
+    )
+    # 3. Expired Event (ended in the past: 2026-10-01)
+    ev_expired = ClubEvent(
+        title="TEST_Expired_Seminar_2026",
+        club_name="IEDC CCE",
+        category="Seminars",
+        date="2026-10-01",
+        time="02:00 PM",
+        registration_deadline="2026-09-28",
+        venue="Seminar Hall",
+        source_url="https://cce.edu.in/",
+        is_verified=True
+    )
+    # 4. Missing / Invalid Date Event (date is 'TBA')
+    ev_invalid_date = ClubEvent(
+        title="TEST_InvalidDate_Conclave_2026",
+        club_name="CCE Cell",
+        category="Conferences",
+        date="TBA",
+        time="TBA",
+        venue="Campus",
+        source_url="https://cce.edu.in/",
+        is_verified=True
+    )
+
+    db.add_all([ev_upcoming, ev_reg_closed, ev_expired, ev_invalid_date])
+    db.commit()
+
+    try:
+        # A. Query upcoming events: must include ev_upcoming and ev_reg_closed, but EXCLUDE ev_expired and ev_invalid_date
+        res_upcoming = client.get("/api/events?status=upcoming")
+        assert res_upcoming.status_code == 200
+        up_events = res_upcoming.json()
+        up_titles = [e["title"] for e in up_events]
+
+        assert "TEST_Upcoming_Hackathon_2026" in up_titles
+        assert "TEST_RegClosed_Workshop_2026" in up_titles
+        assert "TEST_Expired_Seminar_2026" not in up_titles
+        assert "TEST_InvalidDate_Conclave_2026" not in up_titles
+
+        # Check badges & registration eligibility
+        up_hack = next(e for e in up_events if e["title"] == "TEST_Upcoming_Hackathon_2026")
+        assert up_hack["is_upcoming"] is True
+        assert up_hack["is_expired"] is False
+        assert up_hack["is_registration_closed"] is False
+        assert up_hack["can_register"] is True
+
+        up_closed = next(e for e in up_events if e["title"] == "TEST_RegClosed_Workshop_2026")
+        assert up_closed["is_upcoming"] is True
+        assert up_closed["is_expired"] is False
+        assert up_closed["is_registration_closed"] is True
+        assert up_closed["can_register"] is False
+
+        # B. Query past events: must include ev_expired and ev_invalid_date, but EXCLUDE ev_upcoming and ev_reg_closed
+        res_past = client.get("/api/events?status=past")
+        assert res_past.status_code == 200
+        past_events = res_past.json()
+        past_titles = [e["title"] for e in past_events]
+
+        assert "TEST_Expired_Seminar_2026" in past_titles
+        assert "TEST_InvalidDate_Conclave_2026" in past_titles
+        assert "TEST_Upcoming_Hackathon_2026" not in past_titles
+        assert "TEST_RegClosed_Workshop_2026" not in past_titles
+
+        # C. Query open registration opportunities: /api/events?registration=open
+        res_open = client.get("/api/events?registration=open")
+        assert res_open.status_code == 200
+        open_events = res_open.json()
+        open_titles = [e["title"] for e in open_events]
+        assert "TEST_Upcoming_Hackathon_2026" in open_titles
+        assert "TEST_RegClosed_Workshop_2026" not in open_titles
+        assert "TEST_Expired_Seminar_2026" not in open_titles
+
+        # D. Category filtering
+        res_cat = client.get("/api/events?status=upcoming&category=Hackathons")
+        assert res_cat.status_code == 200
+        cat_events = res_cat.json()
+        assert any(e["title"] == "TEST_Upcoming_Hackathon_2026" for e in cat_events)
+        assert not any(e["title"] == "TEST_RegClosed_Workshop_2026" for e in cat_events)
+
+        # E. Registration enforcement
+        # Registering for open event succeeds
+        reg_open_res = client.post(f"/api/events/{ev_upcoming.id}/toggle-register")
+        assert reg_open_res.status_code == 200
+        assert reg_open_res.json()["is_registered"] is True
+
+        # Unregistering succeeds
+        unreg_res = client.post(f"/api/events/{ev_upcoming.id}/toggle-register")
+        assert unreg_res.status_code == 200
+        assert unreg_res.json()["is_registered"] is False
+
+        # Registering for registration-closed event fails with 400 Bad Request
+        reg_closed_res = client.post(f"/api/events/{ev_reg_closed.id}/toggle-register")
+        assert reg_closed_res.status_code == 400
+        assert "registration deadline" in reg_closed_res.json()["detail"].lower()
+
+        # Registering for expired event fails with 400 Bad Request
+        reg_exp_res = client.post(f"/api/events/{ev_expired.id}/toggle-register")
+        assert reg_exp_res.status_code == 400
+        assert "ended" in reg_exp_res.json()["detail"].lower()
+
+    finally:
+        db.query(ClubEvent).filter(ClubEvent.title.like("TEST_%")).delete()
+        db.commit()
+
 
 
