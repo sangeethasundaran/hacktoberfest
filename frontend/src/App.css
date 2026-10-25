@@ -1,0 +1,36 @@
+/* App Layout & Responsiveness */
+
+@media (max-width: 768px) {
+  .md-hidden {
+    display: block !important;
+  }
+
+  .sidebar-closed {
+    transform: translateX(-100%);
+    position: fixed !important;
+  }
+
+  .sidebar-open {
+    transform: translateX(0);
+    position: fixed !important;
+  }
+
+  .search-form-desktop {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .md-hidden {
+    display: none !important;
+  }
+
+  .sidebar-closed, .sidebar-open {
+    transform: none !important;
+    position: sticky !important;
+  }
+
+  .search-form-desktop {
+    display: block !important;
+  }
+}
