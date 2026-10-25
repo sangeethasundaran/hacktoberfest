@@ -12,8 +12,22 @@ import {
   BookOpen, 
   Users, 
   Zap,
-  Check
+  Check,
+  TrendingUp,
+  BarChart2
 } from 'lucide-react';
+import { 
+  ResponsiveContainer, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  CartesianGrid,
+  AreaChart,
+  Area
+} from 'recharts';
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -498,7 +512,111 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Academic Analytics & Study Velocity (Recharts) */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))',
+        gap: '24px'
+      }}>
+        {/* Weekly Study Hours vs Target */}
+        <div className="campus-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <TrendingUp size={20} color="#2563EB" />
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#163A63', margin: 0 }}>
+                  Weekly Study Velocity
+                </h3>
+                <span style={{ fontSize: '12px', color: '#64748B' }}>Actual study hours vs planned daily target</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '11px', fontWeight: '600' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#2563EB' }}>
+                <span style={{ width: '10px', height: '10px', backgroundColor: '#2563EB', borderRadius: '2px' }} /> Actual
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B' }}>
+                <span style={{ width: '10px', height: '10px', backgroundColor: '#DBEAFE', borderRadius: '2px' }} /> Target
+              </span>
+            </div>
+          </div>
+
+          <div style={{ width: '100%', height: '220px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={[
+                  { day: 'Mon', actual: 3.5, target: 3.0 },
+                  { day: 'Tue', actual: 4.0, target: 3.5 },
+                  { day: 'Wed', actual: 2.5, target: 3.0 },
+                  { day: 'Thu', actual: 5.0, target: 3.5 },
+                  { day: 'Fri', actual: 3.0, target: 3.0 },
+                  { day: 'Sat', actual: 6.0, target: 4.0 },
+                  { day: 'Sun', actual: 4.5, target: 3.5 },
+                ]}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#EAF1FA" vertical={false} />
+                <XAxis dataKey="day" stroke="#64748B" fontSize={12} tickLine={false} />
+                <YAxis stroke="#64748B" fontSize={12} tickLine={false} unit="h" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DCE5F0', borderRadius: '8px', fontSize: '12px' }}
+                  formatter={(val) => [`${val} hrs`, '']}
+                />
+                <Bar dataKey="target" fill="#DBEAFE" radius={[4, 4, 0, 0]} barSize={14} />
+                <Bar dataKey="actual" fill="#2563EB" radius={[4, 4, 0, 0]} barSize={14} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Course Effort Allocation */}
+        <div className="campus-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <BarChart2 size={20} color="#2563EB" />
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#163A63', margin: 0 }}>
+                  Course Workload Distribution
+                </h3>
+                <span style={{ fontSize: '12px', color: '#64748B' }}>Estimated revision hours by course</span>
+              </div>
+            </div>
+            <span className="badge badge-blue">Fall 2026</span>
+          </div>
+
+          <div style={{ width: '100%', height: '220px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={[
+                  { course: 'CS304 (OS)', hours: 14 },
+                  { course: 'CS308 (DBMS)', hours: 11 },
+                  { course: 'MATH201', hours: 8 },
+                  { course: 'CS320 (SE)', hours: 7 },
+                  { course: 'CS312 (Net)', hours: 5 }
+                ]}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="effortGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#EAF1FA" vertical={false} />
+                <XAxis dataKey="course" stroke="#64748B" fontSize={11} tickLine={false} />
+                <YAxis stroke="#64748B" fontSize={12} tickLine={false} unit="h" />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DCE5F0', borderRadius: '8px', fontSize: '12px' }}
+                  formatter={(val) => [`${val} hrs`, 'Workload']}
+                />
+                <Area type="monotone" dataKey="hours" stroke="#2563EB" strokeWidth={2} fillOpacity={1} fill="url(#effortGradient)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Add Task Modal */}
+
       {showTaskModal && (
         <div className="modal-overlay" onClick={() => setShowTaskModal(false)}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ padding: '24px' }}>
