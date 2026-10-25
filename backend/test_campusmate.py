@@ -100,3 +100,38 @@ def test_ask_specific_document():
     assert "answer" in data
     assert "snippet" in data
 
+def test_export_schedule_ics():
+    res = client.get("/api/schedule/export.ics")
+    assert res.status_code == 200
+    assert "BEGIN:VCALENDAR" in res.text
+    assert "END:VCALENDAR" in res.text
+    assert "text/calendar" in res.headers["content-type"]
+
+def test_export_study_plan_ics():
+    create_res = client.post("/api/study-plans", json={
+        "subject": "Data Mining",
+        "target_exam_date": "2026-12-05",
+        "daily_hours": 2.0,
+        "topics": ["Clustering", "Classification"]
+    })
+    assert create_res.status_code == 200
+    plan_id = create_res.json()["id"]
+    res = client.get(f"/api/study-plans/{plan_id}/export.ics")
+    assert res.status_code == 200
+    assert "BEGIN:VCALENDAR" in res.text
+    assert "Data Mining" in res.text
+    assert "text/calendar" in res.headers["content-type"]
+
+def test_agent_chat_with_history():
+    res = client.post("/api/agent/chat", json={
+        "message": "When is the deadline for it?",
+        "history": [
+            {"role": "user", "content": "What about Database Systems assignment?"},
+            {"role": "assistant", "content": "You have a Database Systems assignment."}
+        ]
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert any("prior turns referenced" in step or "Integrated session context" in step for step in data["thought_process"])
+
+

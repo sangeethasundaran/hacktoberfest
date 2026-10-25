@@ -14,6 +14,8 @@ Students can ask questions in natural language, manage assignments, organize dea
    - Goes beyond static chat by executing backend Python tools on the student's SQLite database.
    - Transparent step-by-step reasoning (`Thought -> Tool Selection -> Execution -> Synthesis`).
    - Clearly badges verified campus documents vs AI suggestions vs demo engine data.
+   - Interactive embedded action cards right in chat responses (`View in Tasks →`, `Open Roadmap →`, etc.).
+   - Multi-turn conversational memory context window resolving pronouns and references to prior dialogue turns.
    - Built-in tools:
      - `create_task`: Add assignments, homework, and exam milestones.
      - `list_tasks`: Filter and retrieve active deadlines.
@@ -28,20 +30,23 @@ Students can ask questions in natural language, manage assignments, organize dea
 2. **Dashboard Overview**:
    - Time-sensitive greeting ("Good morning / afternoon / evening!").
    - 4 Live Statistics Cards calculated directly from SQLite (Pending Tasks, Upcoming Exams, Completed Tasks, Upcoming Events).
-   - Interactive Today's Schedule timeline with completion toggles.
+   - Interactive Today's Schedule timeline with completion toggles and one-click `.ics` calendar export.
    - Upcoming Deadlines tracker sorted by due date with urgency badges (Overdue, Due Today, Due Soon, Completed).
    - AI Academic Recommendation Card with one-click "Ask CampusMate" action.
+   - Weekly Study Velocity (BarChart) and Course Workload (AreaChart) visualized with Recharts.
    - Quick action shortcuts.
 
 3. **Adaptive Study Planner**:
    - Dynamic study roadmap generator based on target exam dates and daily hours commitment.
    - Milestone checklist with live progress percentage calculation.
+   - One-click `.ics` Calendar Export to sync milestones with Google Calendar, Outlook, and Apple Calendar.
    - Built-in Deep Work Focus Timer (Pomodoro mode: 25m sprints / 50m blocks) with session logging.
 
 4. **Tasks & Deadlines**:
    - Complete CRUD task manager.
+   - Multi-mode sorting (due date, priority, course code) and live search.
    - Filters by Status (Pending, In Progress, Completed), Category (Assignment, Exam, Project, Lab), and Course Code.
-   - Real-time search and priority tagging.
+   - Real-time priority tagging.
 
 5. **Notices & Circulars (NLP Extraction)**:
    - Official university bulletins categorized into Academic, Administrative, Placement, Hostel, and Sports.
@@ -55,13 +60,14 @@ Students can ask questions in natural language, manage assignments, organize dea
 7. **Campus Information & Document Knowledge Base (RAG)**:
    - Official document repository for handbooks, attendance codes, and grading systems.
    - Semantic & keyword retrieval with snippet highlights and verified citations.
+   - "Ask this Document" interactive Q&A modal grounded strictly in official university documentation.
    - Document ingestion for PDFs and syllabus files.
 
 8. **Settings & System Diagnostics**:
    - Autonomous Agent Demo Engine toggle (no external API key required).
    - Support for OpenAI (GPT-4o) and Google Gemini with safe key management.
    - Student profile configuration.
-   - Database restore button to re-seed clean campus sample data at any time.
+   - Single-click database restore button to re-seed clean campus sample data at any time.
 
 ---
 

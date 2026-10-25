@@ -342,7 +342,17 @@ export default function StudyPlanner() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <a
+                    href={`/api/study-plans/${plan.id}/export.ics`}
+                    download={`${plan.subject.replace(/\s+/g, '_').toLowerCase()}_study_plan.ics`}
+                    className="btn-secondary"
+                    style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none' }}
+                    title="Export Study Milestones to Apple/Google/Outlook Calendar (.ics)"
+                  >
+                    <Calendar size={14} color="#2563EB" />
+                    <span>Export .ics</span>
+                  </a>
                   <button
                     onClick={() => handleCopyPlan(plan)}
                     className="btn-secondary"

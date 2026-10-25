@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Any, Dict
 from datetime import datetime
 
@@ -28,9 +28,7 @@ class TaskUpdate(BaseModel):
 class TaskResponse(TaskBase):
     id: int
     created_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class StudyPlanCreate(BaseModel):
     subject: str
@@ -49,9 +47,7 @@ class StudyPlanResponse(BaseModel):
     status: str
     progress_pct: int
     created_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ScheduleItemCreate(BaseModel):
     title: str
@@ -72,9 +68,7 @@ class ScheduleItemResponse(BaseModel):
     location: str
     is_completed: bool
     notes: str
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class NoticeCreate(BaseModel):
     title: str
@@ -95,9 +89,7 @@ class NoticeResponse(BaseModel):
     is_verified: bool
     source: str
     pdf_filename: Optional[str] = ""
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ClubEventResponse(BaseModel):
     id: int
@@ -110,9 +102,7 @@ class ClubEventResponse(BaseModel):
     description: str
     is_registered: bool
     tags: str
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class DocumentResponse(BaseModel):
     id: int
@@ -123,13 +113,12 @@ class DocumentResponse(BaseModel):
     file_type: str
     source_file: str
     uploaded_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AgentChatRequest(BaseModel):
     message: str
     context: Optional[Dict[str, Any]] = None
+    history: Optional[List[Dict[str, str]]] = []
 
 class AgentChatResponse(BaseModel):
     response: str
@@ -158,3 +147,4 @@ class DashboardStats(BaseModel):
     ai_recommendation: Dict[str, Any]
     deadlines: List[TaskResponse]
     today_schedule: List[ScheduleItemResponse]
+    model_config = ConfigDict(from_attributes=True)

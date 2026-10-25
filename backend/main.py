@@ -1,8 +1,10 @@
 import os
 import json
-from datetime import datetime, date
+import re
+from datetime import datetime, date, timezone
 from typing import List, Optional, Dict, Any
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -17,10 +19,20 @@ from seed_data import seed_database
 # Create DB tables
 Base.metadata.create_all(bind=engine)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    db = next(get_db())
+    try:
+        seed_database(db)
+    finally:
+        db.close()
+    yield
+
 app = FastAPI(
     title="CampusMate AI API",
     description="Intelligent Agentic Campus Companion Backend",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS setup for frontend
@@ -31,14 +43,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-def startup_event():
-    db = next(get_db())
-    try:
-        seed_database(db)
-    finally:
-        db.close()
 
 # ----------------- DASHBOARD -----------------
 
@@ -77,8 +81,8 @@ def get_dashboard_data(db: Session = Depends(get_db)):
         upcoming_events=upcoming_events,
         greeting=greeting,
         ai_recommendation=recommendation,
-        deadlines=[schemas.TaskResponse.from_orm(t) for t in deadlines],
-        today_schedule=[schemas.ScheduleItemResponse.from_orm(s) for s in today_schedule]
+        deadlines=[schemas.TaskResponse.model_validate(t) for t in deadlines],
+        today_schedule=[schemas.ScheduleItemResponse.model_validate(s) for s in today_schedule]
     )
 
 # ----------------- TASKS -----------------
@@ -101,7 +105,7 @@ def get_tasks(
 
 @app.post("/api/tasks", response_model=schemas.TaskResponse)
 def create_task(task_in: schemas.TaskCreate, db: Session = Depends(get_db)):
-    task = Task(**task_in.dict())
+    task = Task(**task_in.model_dump())
     db.add(task)
     db.commit()
     db.refresh(task)
@@ -204,6 +208,23 @@ def toggle_milestone(plan_id: int, idx: int, db: Session = Depends(get_db)):
         return {"success": True, "progress_pct": plan.progress_pct, "milestone": milestones[idx]}
     raise HTTPException(status_code=400, detail="Invalid milestone index")
 
+def format_ics_datetime(date_str: str, time_str: str = "") -> str:
+    clean_date = date_str.replace("-", "").strip()
+    hour, minute = 9, 0
+    if time_str:
+        match = re.search(r'(\d+):(\d+)\s*(AM|PM)?', time_str, re.IGNORECASE)
+        if match:
+            h = int(match.group(1))
+            m = int(match.group(2))
+            ampm = match.group(3)
+            if ampm:
+                if ampm.upper() == "PM" and h < 12:
+                    h += 12
+                elif ampm.upper() == "AM" and h == 12:
+                    h = 0
+            hour, minute = h, m
+    return f"{clean_date}T{hour:02d}{minute:02d}00"
+
 @app.delete("/api/study-plans/{plan_id}")
 def delete_study_plan(plan_id: int, db: Session = Depends(get_db)):
     plan = db.query(StudyPlan).filter(StudyPlan.id == plan_id).first()
@@ -212,6 +233,51 @@ def delete_study_plan(plan_id: int, db: Session = Depends(get_db)):
     db.delete(plan)
     db.commit()
     return {"success": True, "message": "Study plan deleted"}
+
+@app.get("/api/study-plans/{plan_id}/export.ics")
+def export_study_plan_ics(plan_id: int, db: Session = Depends(get_db)):
+    plan = db.query(StudyPlan).filter(StudyPlan.id == plan_id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Study plan not found")
+        
+    cal_lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//CampusMate AI//Academic Companion//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        f"X-WR-CALNAME:{plan.subject} Study Plan",
+        "X-WR-TIMEZONE:UTC",
+    ]
+    
+    now_stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    milestones = json.loads(plan.milestones_json) if plan.milestones_json else []
+    
+    for idx, m in enumerate(milestones):
+        m_date = m.get("date", plan.target_exam_date)
+        dtstart = format_ics_datetime(m_date, "18:00")
+        dtend = format_ics_datetime(m_date, "20:00")
+        topic = m.get("topic", f"Study Session {idx+1}")
+        action = m.get("action_item", "")
+        cal_lines.extend([
+            "BEGIN:VEVENT",
+            f"UID:plan-{plan.id}-m{idx}@campusmate.ai",
+            f"DTSTAMP:{now_stamp}",
+            f"DTSTART:{dtstart}",
+            f"DTEND:{dtend}",
+            f"SUMMARY:{plan.subject} Study: {topic}",
+            f"DESCRIPTION:Milestone: {action} | Target Exam: {plan.target_exam_date}",
+            "END:VEVENT"
+        ])
+        
+    cal_lines.append("END:VCALENDAR")
+    ics_body = "\r\n".join(cal_lines)
+    clean_subj = re.sub(r'[^a-zA-Z0-9_]', '_', plan.subject.lower())
+    return Response(
+        content=ics_body,
+        media_type="text/calendar",
+        headers={"Content-Disposition": f"attachment; filename={clean_subj}_study_plan.ics"}
+    )
 
 # ----------------- SCHEDULE -----------------
 
@@ -222,9 +288,63 @@ def get_schedule(date_str: Optional[str] = None, db: Session = Depends(get_db)):
         query = query.filter(ScheduleItem.date == date_str)
     return query.order_by(ScheduleItem.date.asc(), ScheduleItem.start_time.asc()).all()
 
+@app.get("/api/schedule/export.ics")
+def export_schedule_ics(db: Session = Depends(get_db)):
+    schedule_items = db.query(ScheduleItem).order_by(ScheduleItem.date.asc(), ScheduleItem.start_time.asc()).all()
+    tasks = db.query(Task).filter(Task.status != "Completed").all()
+    
+    cal_lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//CampusMate AI//Academic Companion//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-WR-CALNAME:CampusMate Schedule & Deadlines",
+        "X-WR-TIMEZONE:UTC",
+    ]
+    
+    now_stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    
+    for item in schedule_items:
+        dtstart = format_ics_datetime(item.date, item.start_time)
+        dtend = format_ics_datetime(item.date, item.end_time if item.end_time and item.end_time != "--" else item.start_time)
+        cal_lines.extend([
+            "BEGIN:VEVENT",
+            f"UID:sched-{item.id}@campusmate.ai",
+            f"DTSTAMP:{now_stamp}",
+            f"DTSTART:{dtstart}",
+            f"DTEND:{dtend}",
+            f"SUMMARY:{item.title} ({item.category})",
+            f"LOCATION:{item.location}",
+            f"DESCRIPTION:{item.notes or item.title}",
+            "END:VEVENT"
+        ])
+        
+    for task in tasks:
+        dtstart = format_ics_datetime(task.due_date, "23:59")
+        dtend = format_ics_datetime(task.due_date, "23:59")
+        cal_lines.extend([
+            "BEGIN:VEVENT",
+            f"UID:task-{task.id}@campusmate.ai",
+            f"DTSTAMP:{now_stamp}",
+            f"DTSTART:{dtstart}",
+            f"DTEND:{dtend}",
+            f"SUMMARY:DUE: {task.title} [{task.course}]",
+            f"DESCRIPTION:Category: {task.category} | Priority: {task.priority} | {task.description}",
+            "END:VEVENT"
+        ])
+        
+    cal_lines.append("END:VCALENDAR")
+    ics_body = "\r\n".join(cal_lines)
+    return Response(
+        content=ics_body,
+        media_type="text/calendar",
+        headers={"Content-Disposition": "attachment; filename=campusmate_schedule.ics"}
+    )
+
 @app.post("/api/schedule", response_model=schemas.ScheduleItemResponse)
 def add_schedule_item(item_in: schemas.ScheduleItemCreate, db: Session = Depends(get_db)):
-    item = ScheduleItem(**item_in.dict())
+    item = ScheduleItem(**item_in.model_dump())
     db.add(item)
     db.commit()
     db.refresh(item)
@@ -451,7 +571,7 @@ async def upload_document(
 @app.post("/api/agent/chat", response_model=schemas.AgentChatResponse)
 def chat_with_agent(chat_in: schemas.AgentChatRequest, db: Session = Depends(get_db)):
     agent = CampusAgent(db)
-    result = agent.process_message(chat_in.message, chat_in.context)
+    result = agent.process_message(chat_in.message, chat_in.context, chat_in.history)
     return schemas.AgentChatResponse(
         response=result["response"],
         thought_process=result["thought_process"],

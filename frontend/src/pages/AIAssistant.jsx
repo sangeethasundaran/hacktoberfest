@@ -87,10 +87,15 @@ export default function AIAssistant() {
     setIsProcessing(true);
 
     try {
+      const history = messages.slice(-8).map(m => ({
+        role: m.sender === 'user' ? 'user' : 'assistant',
+        content: m.text
+      }));
+
       const res = await fetch('/api/agent/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: query })
+        body: JSON.stringify({ message: query, history })
       });
 
       if (res.ok) {

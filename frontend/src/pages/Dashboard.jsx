@@ -352,16 +352,27 @@ export default function Dashboard() {
       }}>
         {/* Left Column: Today's Schedule */}
         <div className="campus-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Clock size={20} color="#2563EB" />
               <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63' }}>
                 Today's Schedule
               </h3>
             </div>
-            <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '500' }}>
-              {stats?.today_schedule?.length || 0} scheduled blocks
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <a
+                href="/api/schedule/export.ics"
+                download="campusmate_schedule.ics"
+                className="btn-secondary"
+                style={{ padding: '4px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none' }}
+                title="Export schedule and deadlines to Apple/Google Calendar (.ics)"
+              >
+                <Calendar size={13} color="#2563EB" /> Export .ics
+              </a>
+              <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '500' }}>
+                {stats?.today_schedule?.length || 0} scheduled blocks
+              </span>
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

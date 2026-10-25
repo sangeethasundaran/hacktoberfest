@@ -32,7 +32,7 @@ class CampusAgent:
         self.db = db
         self.settings = get_current_ai_settings(db)
 
-    def process_message(self, message: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def process_message(self, message: str, context: Optional[Dict[str, Any]] = None, history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
         """Orchestrates intent understanding, tool selection, execution, and synthesis."""
         q = message.strip()
         q_lower = q.lower()
@@ -45,6 +45,21 @@ class CampusAgent:
         is_demo = not self.settings["is_live"]
         
         thought_process.append(f"Received query: '{q}'")
+        
+        # Consider prior conversational context if provided
+        prev_user_topic = ""
+        if history and len(history) > 0:
+            thought_process.append(f"Integrated session context: {len(history)} prior turns referenced.")
+            for prev in reversed(history):
+                if prev.get("role") == "user" and not prev_user_topic:
+                    prev_user_topic = prev.get("content", "")
+            # If current query is ambiguous (e.g. "add a task for it", "when is that?"), blend previous topic
+            if any(term in q_lower for term in ["for it", "for that", "about it", "this notice", "that notice", "that exam", "this exam"]):
+                if prev_user_topic:
+                    thought_process.append(f"Resolved contextual pronoun using prior turn: '{prev_user_topic[:40]}...'")
+                    q_lower = f"{q_lower} {prev_user_topic.lower()}"
+                    q = f"{q} (Context: {prev_user_topic})"
+
         thought_process.append("Analyzing intent and mapping to available CampusMate backend tools...")
 
         # 1. Intent: Create Task

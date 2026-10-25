@@ -1,6 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Text, Boolean, Float, DateTime
 from database import Base
+
+def utc_now():
+    return datetime.now(timezone.utc)
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -14,7 +17,7 @@ class Task(Base):
     category = Column(String(50), default="Assignment")  # Assignment, Exam, Project, Lab, Reading, Admin
     status = Column(String(30), default="Pending")  # Pending, In Progress, Completed
     estimated_hours = Column(Float, default=2.0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
 class StudyPlan(Base):
     __tablename__ = "study_plans"
@@ -28,7 +31,7 @@ class StudyPlan(Base):
     milestones_json = Column(Text, default="[]")  # JSON list of day objects
     status = Column(String(30), default="Active")  # Active, Completed, Paused
     progress_pct = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
 class ScheduleItem(Base):
     __tablename__ = "schedule_items"
@@ -82,7 +85,7 @@ class CampusDocument(Base):
     summary = Column(Text, default="")
     file_type = Column(String(20), default="PDF")
     source_file = Column(String(200), default="")
-    uploaded_at = Column(DateTime, default=datetime.utcnow)
+    uploaded_at = Column(DateTime, default=utc_now)
 
 class AgentInteraction(Base):
     __tablename__ = "agent_interactions"
@@ -95,7 +98,7 @@ class AgentInteraction(Base):
     tool_output = Column(Text, default="{}")
     response = Column(Text, nullable=False)
     is_demo = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
 class UserSettings(Base):
     __tablename__ = "user_settings"
