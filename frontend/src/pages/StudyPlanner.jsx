@@ -37,7 +37,7 @@ export default function StudyPlanner() {
   const [timerDuration, setTimerDuration] = useState(25 * 60); // 25 min default
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [timerRunning, setTimerRunning] = useState(false);
-  const [sessionsCompleted, setSessionsCompleted] = useState(2);
+  const [sessionsCompleted, setSessionsCompleted] = useState(0);
 
   const fetchPlans = async () => {
     try {
@@ -149,10 +149,10 @@ export default function StudyPlanner() {
       {/* Top Banner */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#163A63' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--primary-dark)' }}>
             Adaptive Study Planner
           </h2>
-          <p style={{ color: '#64748B', fontSize: '14px', marginTop: '4px' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
             Transform syllabus topics into structured daily milestones leading up to your exams.
           </p>
         </div>
@@ -168,7 +168,7 @@ export default function StudyPlanner() {
       {/* Focus Timer Card */}
       <div style={{
         backgroundColor: '#FFFFFF',
-        border: '1px solid #DCE5F0',
+        border: '1px solid var(--border-color)',
         borderRadius: '16px',
         padding: '24px',
         display: 'flex',
@@ -183,23 +183,23 @@ export default function StudyPlanner() {
             width: '56px',
             height: '56px',
             borderRadius: '14px',
-            backgroundColor: '#EFF6FF',
+            backgroundColor: 'var(--primary-subtle)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#2563EB',
+            color: 'var(--primary)',
             flexShrink: 0
           }}>
             <Flame size={28} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '18px', fontWeight: '700', color: '#163A63' }}>
+              <span style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)' }}>
                 Deep Work Focus Timer
               </span>
-              <span className="badge badge-blue">Pomodoro</span>
+              <span className="badge badge-burgundy">Pomodoro</span>
             </div>
-            <div style={{ fontSize: '13px', color: '#64748B', marginTop: '2px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
               Eliminate distractions and log focused academic sprints.
             </div>
           </div>
@@ -214,12 +214,14 @@ export default function StudyPlanner() {
                 setTimerDuration(25 * 60);
                 setTimeLeft(25 * 60);
               }}
-              className={`btn-secondary ${timerDuration === 25 * 60 ? 'btn-active' : ''}`}
+              className="btn-secondary"
               style={{
                 padding: '6px 12px',
                 fontSize: '12px',
-                backgroundColor: timerDuration === 25 * 60 ? '#DBEAFE' : '#FFFFFF',
-                color: timerDuration === 25 * 60 ? '#163A63' : '#64748B'
+                backgroundColor: timerDuration === 25 * 60 ? 'var(--primary-subtle)' : '#FFFFFF',
+                color: timerDuration === 25 * 60 ? 'var(--primary)' : 'var(--text-secondary)',
+                borderColor: timerDuration === 25 * 60 ? 'var(--primary)' : 'var(--border-color)',
+                fontWeight: timerDuration === 25 * 60 ? '600' : '500'
               }}
             >
               25m Sprint
@@ -234,8 +236,10 @@ export default function StudyPlanner() {
               style={{
                 padding: '6px 12px',
                 fontSize: '12px',
-                backgroundColor: timerDuration === 50 * 60 ? '#DBEAFE' : '#FFFFFF',
-                color: timerDuration === 50 * 60 ? '#163A63' : '#64748B'
+                backgroundColor: timerDuration === 50 * 60 ? 'var(--primary-subtle)' : '#FFFFFF',
+                color: timerDuration === 50 * 60 ? 'var(--primary)' : 'var(--text-secondary)',
+                borderColor: timerDuration === 50 * 60 ? 'var(--primary)' : 'var(--border-color)',
+                fontWeight: timerDuration === 50 * 60 ? '600' : '500'
               }}
             >
               50m Deep Block
@@ -245,9 +249,9 @@ export default function StudyPlanner() {
           {/* Digits Display */}
           <div style={{
             fontSize: '36px',
-            fontWeight: '700',
+            fontWeight: '800',
             fontFamily: 'monospace',
-            color: '#163A63',
+            color: 'var(--primary-dark)',
             minWidth: '110px',
             textAlign: 'center'
           }}>
@@ -280,7 +284,7 @@ export default function StudyPlanner() {
           <div style={{
             fontSize: '12px',
             color: '#166534',
-            backgroundColor: '#DDF5E5',
+            backgroundColor: '#DCFCE7',
             padding: '6px 12px',
             borderRadius: '20px',
             fontWeight: '600'
@@ -291,25 +295,25 @@ export default function StudyPlanner() {
       </div>
 
       {/* Active Plans List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#163A63' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)' }}>
           Active Study Roadmaps ({plans.length})
         </h3>
 
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
+          <div className="campus-card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
             Loading study roadmaps...
           </div>
         ) : plans.length === 0 ? (
-          <div className="campus-card" style={{ padding: '48px', textAlign: 'center' }}>
-            <GraduationCap size={40} color="#2563EB" style={{ margin: '0 auto 16px' }} />
-            <h4 style={{ fontSize: '17px', fontWeight: '600', color: '#163A63', marginBottom: '8px' }}>
-              No study plans created yet
-            </h4>
-            <p style={{ color: '#64748B', fontSize: '14px', maxWidth: '420px', margin: '0 auto 20px' }}>
-              Tell CampusMate AI what exam you are preparing for and it will craft a personalized day-by-day milestone roadmap!
-            </p>
-            <button className="btn-primary" onClick={() => setShowModal(true)}>
+          <div className="empty-state">
+            <GraduationCap className="empty-state-icon" />
+            <div className="empty-state-title">
+              No Study Plans Created Yet
+            </div>
+            <div className="empty-state-desc">
+              Tell CampusMate AI what exam you are preparing for and it will craft a personalized day-by-day milestone roadmap based on your course syllabus.
+            </div>
+            <button className="btn-primary" style={{ marginTop: '16px' }} onClick={() => setShowModal(true)}>
               <Plus size={16} /> Create Your First Plan
             </button>
           </div>
@@ -327,17 +331,20 @@ export default function StudyPlanner() {
               }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <h4 style={{ fontSize: '18px', fontWeight: '700', color: '#163A63' }}>
+                    <h4 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
                       {plan.subject}
                     </h4>
-                    <span className="badge badge-blue">
+                    {plan.is_sample && (
+                      <span className="badge badge-demo">Demo Plan</span>
+                    )}
+                    <span className="badge badge-burgundy">
                       {plan.total_days} Days Total
                     </span>
-                    <span className="badge badge-neutral">
+                    <span className="badge badge-grey">
                       {plan.daily_hours} hrs/day
                     </span>
                   </div>
-                  <div style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
                     Target Exam Date: <strong>{plan.target_exam_date}</strong>
                   </div>
                 </div>
@@ -350,7 +357,7 @@ export default function StudyPlanner() {
                     style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none' }}
                     title="Export Study Milestones to Apple/Google/Outlook Calendar (.ics)"
                   >
-                    <Calendar size={14} color="#2563EB" />
+                    <Calendar size={14} color="var(--primary)" />
                     <span>Export .ics</span>
                   </a>
                   <button
@@ -371,25 +378,24 @@ export default function StudyPlanner() {
                     <Trash2 size={14} />
                   </button>
                 </div>
-
               </div>
 
               {/* Progress Bar */}
               <div style={{ marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '600', color: '#163A63', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '6px' }}>
                   <span>Roadmap Completion</span>
                   <span>{plan.progress_pct}% Completed</span>
                 </div>
                 <div style={{
                   height: '8px',
-                  backgroundColor: '#EAF1FA',
+                  backgroundColor: 'var(--bg-subtle)',
                   borderRadius: '4px',
                   overflow: 'hidden'
                 }}>
                   <div style={{
                     height: '100%',
                     width: `${plan.progress_pct}%`,
-                    backgroundColor: '#2563EB',
+                    backgroundColor: 'var(--primary)',
                     borderRadius: '4px',
                     transition: 'width 0.3s ease'
                   }} />
@@ -398,7 +404,7 @@ export default function StudyPlanner() {
 
               {/* Milestones Timeline */}
               <div>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', marginBottom: '10px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--primary-dark)', marginBottom: '10px' }}>
                   Daily Study Milestones
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -411,8 +417,8 @@ export default function StudyPlanner() {
                         justifyContent: 'space-between',
                         padding: '10px 14px',
                         borderRadius: '8px',
-                        backgroundColor: m.completed ? '#F5F8FC' : '#FFFFFF',
-                        border: '1px solid #DCE5F0',
+                        backgroundColor: m.completed ? 'var(--bg-subtle)' : '#FFFFFF',
+                        border: '1px solid var(--border-color)',
                         transition: 'all 0.15s ease'
                       }}
                     >
@@ -423,8 +429,8 @@ export default function StudyPlanner() {
                             width: '20px',
                             height: '20px',
                             borderRadius: '5px',
-                            border: m.completed ? 'none' : '2px solid #cbd5e1',
-                            backgroundColor: m.completed ? '#166534' : 'transparent',
+                            border: m.completed ? 'none' : '2px solid #CBD5E1',
+                            backgroundColor: m.completed ? 'var(--primary)' : 'transparent',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -440,18 +446,18 @@ export default function StudyPlanner() {
                           <div style={{
                             fontSize: '13px',
                             fontWeight: '600',
-                            color: m.completed ? '#64748B' : '#163A63',
+                            color: m.completed ? 'var(--text-secondary)' : 'var(--text-primary)',
                             textDecoration: m.completed ? 'line-through' : 'none'
                           }}>
                             Day {m.day} &bull; {m.topic}
                           </div>
-                          <div style={{ fontSize: '11px', color: '#64748B' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                             {m.date} &bull; {m.duration_hours} hrs required &bull; {m.notes}
                           </div>
                         </div>
                       </div>
 
-                      <span className={`badge ${m.completed ? 'badge-success' : 'badge-neutral'}`}>
+                      <span className={`badge ${m.completed ? 'badge-success' : 'badge-grey'}`}>
                         {m.completed ? 'Done' : 'Upcoming'}
                       </span>
                     </div>
@@ -472,22 +478,22 @@ export default function StudyPlanner() {
                 width: '36px',
                 height: '36px',
                 borderRadius: '8px',
-                backgroundColor: '#EFF6FF',
+                backgroundColor: 'var(--primary-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2563EB'
+                color: 'var(--primary)'
               }}>
                 <Sparkles size={20} />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#163A63' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
                 Generate Adaptive Study Roadmap
               </h3>
             </div>
 
             <form onSubmit={handleCreatePlan} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                   Course / Subject *
                 </label>
                 <input
@@ -502,7 +508,7 @@ export default function StudyPlanner() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                     Exam / Target Date *
                   </label>
                   <input
@@ -514,7 +520,7 @@ export default function StudyPlanner() {
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                     Daily Study Commitment (Hours)
                   </label>
                   <input
@@ -530,7 +536,7 @@ export default function StudyPlanner() {
               </div>
 
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                   Key Topics or Modules to Cover (One per line)
                 </label>
                 <textarea

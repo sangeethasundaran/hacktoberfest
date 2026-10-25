@@ -17,6 +17,7 @@ class Task(Base):
     category = Column(String(50), default="Assignment")  # Assignment, Exam, Project, Lab, Reading, Admin
     status = Column(String(30), default="Pending")  # Pending, In Progress, Completed
     estimated_hours = Column(Float, default=2.0)
+    is_sample = Column(Boolean, default=False)
     created_at = Column(DateTime, default=utc_now)
 
 class StudyPlan(Base):
@@ -31,6 +32,7 @@ class StudyPlan(Base):
     milestones_json = Column(Text, default="[]")  # JSON list of day objects
     status = Column(String(30), default="Active")  # Active, Completed, Paused
     progress_pct = Column(Integer, default=0)
+    is_sample = Column(Boolean, default=False)
     created_at = Column(DateTime, default=utc_now)
 
 class ScheduleItem(Base):
@@ -44,6 +46,7 @@ class ScheduleItem(Base):
     date = Column(String(50), nullable=False)  # YYYY-MM-DD
     location = Column(String(150), default="Campus")
     is_completed = Column(Boolean, default=False)
+    is_sample = Column(Boolean, default=False)
     notes = Column(Text, default="")
 
 class Notice(Base):
@@ -58,8 +61,11 @@ class Notice(Base):
     action_items_json = Column(Text, default="[]")
     important_dates_json = Column(Text, default="[]")
     is_verified = Column(Boolean, default=True)
+    verification_notes = Column(String(250), default="Verified Official Circular")
     source = Column(String(150), default="Office of the Dean")
+    source_url = Column(String(300), default="https://cce.edu.in/")
     pdf_filename = Column(String(150), default="")
+    is_sample = Column(Boolean, default=False)
 
 class ClubEvent(Base):
     __tablename__ = "club_events"
@@ -69,11 +75,23 @@ class ClubEvent(Base):
     club_name = Column(String(150), nullable=False)
     category = Column(String(60), default="Technical")  # Technical, Cultural, Sports, Entrepreneurship, Social
     date = Column(String(50), nullable=False)
-    time = Column(String(50), nullable=False)
-    location = Column(String(150), default="Campus Auditorium")
+    time = Column(String(50), default="TBA")
+    location = Column(String(150), default="Christ College of Engineering, Irinjalakuda")
+    venue = Column(String(150), default="Christ College of Engineering, Irinjalakuda")
+    organizer = Column(String(150), default="CCE")
     description = Column(Text, default="")
+    registration_deadline = Column(String(50), default="")
+    registration_link = Column(String(300), default="")
+    source_url = Column(String(300), default="https://cce.edu.in/")
+    source_name = Column(String(150), default="Christ College of Engineering Official Portal")
+    is_verified = Column(Boolean, default=True)
+    verification_notes = Column(String(250), default="Official CCE Publication")
+    is_upcoming = Column(Boolean, default=True)
+    external_id = Column(String(100), default="", index=True)
     is_registered = Column(Boolean, default=False)
-    tags = Column(String(200), default="Campus, Club")
+    tags = Column(String(200), default="CCE, Campus Event")
+    is_sample = Column(Boolean, default=False)
+    last_synced_at = Column(DateTime, default=utc_now)
 
 class CampusDocument(Base):
     __tablename__ = "campus_documents"
@@ -111,3 +129,6 @@ class UserSettings(Base):
     email = Column(String(100), default="alex.chen@campus.edu")
     ai_mode = Column(String(30), default="demo")  # demo, openai, gemini
     api_key_masked = Column(String(100), default="")
+    api_key = Column(String(500), default="")
+    last_cce_sync = Column(String(50), default="")
+    last_sync_status = Column(String(50), default="Ready")

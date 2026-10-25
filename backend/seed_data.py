@@ -276,65 +276,9 @@ def seed_database(db: Session, force: bool = False):
     ]
     db.add_all(notices_data)
 
-    # 6. Club Events
-    events_data = [
-        ClubEvent(
-            title="HackCampus 2026: 36-Hour Hackathon",
-            club_name="ACM Student Chapter",
-            category="Technical",
-            date=(today + timedelta(days=5)).strftime("%Y-%m-%d"),
-            time="09:00 AM",
-            location="CS Complex & Innovation Lab",
-            description="Build agentic AI applications and IoT solutions. Mentors from top tech companies, free meals, and $3,000 in bounties.",
-            is_registered=True,
-            tags="AI, Hackathon, Coding, Prizes"
-        ),
-        ClubEvent(
-            title="Generative AI & Agentic Systems Masterclass",
-            club_name="Google Developer Student Club (GDSC)",
-            category="Technical",
-            date=(today + timedelta(days=3)).strftime("%Y-%m-%d"),
-            time="04:30 PM",
-            location="Seminar Hall B",
-            description="Hands-on workshop building autonomous agents using LLM tool calling, RAG pipelines, and vector databases.",
-            is_registered=False,
-            tags="Workshop, Agents, AI, Free Swag"
-        ),
-        ClubEvent(
-            title="Startup Pitch Battle & Venture Fireside",
-            club_name="E-Cell (Entrepreneurship Cell)",
-            category="Entrepreneurship",
-            date=(today + timedelta(days=7)).strftime("%Y-%m-%d"),
-            time="02:00 PM",
-            location="Campus Incubation Hub",
-            description="10 student-founded startups pitch to angel investors and alumni founders. Networking dinner included.",
-            is_registered=False,
-            tags="Startups, Pitching, Funding"
-        ),
-        ClubEvent(
-            title="Acoustic Sunset Jam & Open Mic",
-            club_name="Cultural & Music Society",
-            category="Cultural",
-            date=(today + timedelta(days=4)).strftime("%Y-%m-%d"),
-            time="06:00 PM",
-            location="Open Air Amphitheatre",
-            description="Unwind before mid-terms with live acoustic performances, poetry readings, and student indie bands.",
-            is_registered=False,
-            tags="Music, Relax, Open Mic"
-        ),
-        ClubEvent(
-            title="Inter-Department Futsal Tournament",
-            club_name="University Sports Council",
-            category="Sports",
-            date=(today + timedelta(days=8)).strftime("%Y-%m-%d"),
-            time="04:00 PM",
-            location="North Sports Complex",
-            description="Annual 5-a-side futsal tournament. CS vs ECE kickoff match on Friday afternoon.",
-            is_registered=False,
-            tags="Sports, Tournament, Football"
-        )
-    ]
-    db.add_all(events_data)
+    # 6. Real Christ College of Engineering (Autonomous) Club & Campus Events
+    import cce_service
+    cce_service.sync_cce_data(db)
 
     # 7. Official Campus Documents (for RAG)
     docs_data = [
@@ -404,9 +348,54 @@ Hostel residents must swipe their biometric ID cards at the hostel entry gate be
 
 Section 5: Quiet Hours and Community Standards
 Quiet study hours are strictly enforced between 11:00 PM and 06:00 AM across all residential blocks. Non-resident visitors are permitted only in the common lounge between 09:00 AM and 07:00 PM."""
+        ),
+        CampusDocument(
+            title="Christ College of Engineering (Autonomous) Examination Manual & Evaluation Regulations 2025",
+            category="Academic Policy",
+            file_type="PDF",
+            source_file="CCE_EXAMINATION_MANUAL_2025.pdf",
+            summary="Official regulations of Christ College of Engineering (Autonomous), Irinjalakuda governing Continuous Internal Evaluation (CIE 40%), End Semester Examination (ESE 60%), attendance condonation, and grading scale.",
+            content="""CHRIST COLLEGE OF ENGINEERING (AUTONOMOUS), IRINJALAKUDA
+OFFICE OF THE CONTROLLER OF EXAMINATIONS & ACADEMIC COUNCIL
+ACADEMIC REGULATIONS AND EXAMINATION MANUAL (2025-2026)
+
+1. Autonomous Status & Accreditation:
+Christ College of Engineering, Irinjalakuda operates as an Autonomous Institution accredited by NAAC and NBA, affiliated with APJ Abdul Kalam Technological University (KTU).
+
+2. Evaluation Pattern & Assessment Scheme:
+The evaluation of B.Tech programmes is divided into:
+- Continuous Internal Evaluation (CIE): 40% weightage comprising continuous assessment tests (CAT-1 and CAT-2), assignments, lab evaluations, and seminar presentations.
+- End Semester Examination (ESE): 60% weightage conducted by the Autonomous Examination Cell.
+
+3. Attendance Eligibility and Condonation:
+A candidate must secure minimum 75% attendance in each registered course to be eligible to appear for the End Semester Examination. Shortage of attendance between 65% and 75% may be condoned by the Principal / Head of Institution strictly on genuine medical grounds certified by registered medical practitioners, or official representation in sanctioned IEEE, sports, or academic hackathons.
+
+4. Grading System:
+Christ College of Engineering follows a 10-point relative/absolute grading system with grades O, A+, A, B+, B, C, and F (Fail). Minimum passing grade for each course is Grade C (40% in ESE and 45% aggregate in CIE+ESE).
+
+5. Student Support & IEEE Student Branch:
+The institution hosts an active IEEE Student Branch (IEEE SB CCE), IEDC innovation cell funded by KSCSTE, CSI, and ASCE student chapters. Official updates and examination circulars are published at https://cce.edu.in/ and https://cce.edu.in/student_services/ieee."""
         )
     ]
     db.add_all(docs_data)
 
     db.commit()
     return {"status": "seeded_successfully"}
+
+def clear_sample_data(db: Session):
+    """Purges only demonstration records (is_sample=True) while strictly preserving user-created records."""
+    t_del = db.query(Task).filter(Task.is_sample == True).delete()
+    sp_del = db.query(StudyPlan).filter(StudyPlan.is_sample == True).delete()
+    sc_del = db.query(ScheduleItem).filter(ScheduleItem.is_sample == True).delete()
+    n_del = db.query(Notice).filter(Notice.is_sample == True).delete()
+    e_del = db.query(ClubEvent).filter(ClubEvent.is_sample == True).delete()
+    db.commit()
+    return {
+        "success": True,
+        "message": "Demonstration data removed successfully. All your user-created records are preserved.",
+        "tasks_removed": t_del,
+        "study_plans_removed": sp_del,
+        "schedule_items_removed": sc_del,
+        "notices_removed": n_del,
+        "events_removed": e_del
+    }

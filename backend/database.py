@@ -2,7 +2,8 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./campusmate.db")
+DEFAULT_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "campusmate.db")
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH.replace(os.sep, '/')}")
 
 engine = create_engine(
     DATABASE_URL, 

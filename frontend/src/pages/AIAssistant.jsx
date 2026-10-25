@@ -12,15 +12,13 @@ import {
   ChevronDown, 
   ChevronUp, 
   BookOpen, 
-  ShieldCheck,
-  RotateCcw,
-  CheckSquare,
-  Calendar,
-  Ticket,
-  ArrowRight
+  ShieldCheck, 
+  RotateCcw, 
+  CheckSquare, 
+  Calendar, 
+  Ticket, 
+  ArrowRight 
 } from 'lucide-react';
-
-
 
 const SUGGESTIONS = [
   "What assignments do I have due this week?",
@@ -37,12 +35,12 @@ export default function AIAssistant() {
     {
       id: 1,
       sender: 'assistant',
-      text: "Hello Alex! I am **CampusMate AI**, your agentic campus companion.\n\nI don't just chat — I have direct access to your academic database, study tools, college bulletins, and official regulations. Ask me to manage deadlines, build study plans, search verified policies, or summarize notices!",
+      text: "Hello! I am **CampusMate AI**, your academic assistant.\n\nI have direct access to your campus database, tasks, study roadmaps, club schedules, and official regulations. Ask me to manage deadlines, check your schedule, create study roadmaps, look up verified policies, or summarize notices!",
       thought_process: [
-        "Agent initialized in Autonomous Agent Engine mode.",
-        "Connected to SQLite database with 10 academic tools ready."
+        "Agent initialized and connected to database.",
+        "Tools active: query_academic_schedule, get_active_tasks, create_task, create_study_plan, search_campus_documents, get_upcoming_events."
       ],
-      is_demo: true,
+      is_demo: false,
       verified_sources: []
     }
   ]);
@@ -50,6 +48,7 @@ export default function AIAssistant() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [expandedThoughtId, setExpandedThoughtId] = useState(null);
   const [expandedToolId, setExpandedToolId] = useState(null);
+  const [aiSettings, setAiSettings] = useState(null);
   const messagesEndRef = useRef(null);
 
   const [searchParams] = useSearchParams();
@@ -57,9 +56,25 @@ export default function AIAssistant() {
   const initialPrompt = searchParams.get('prompt');
   const hasAutoFired = useRef(false);
 
+  const fetchAiSettings = async () => {
+    try {
+      const res = await fetch('/api/settings');
+      if (res.ok) {
+        const data = await res.json();
+        setAiSettings(data);
+      }
+    } catch (err) {
+      console.error("Could not fetch AI settings:", err);
+    }
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    fetchAiSettings();
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -109,18 +124,21 @@ export default function AIAssistant() {
           tool_input: data.tool_input,
           tool_output: data.tool_output,
           is_demo: data.is_demo,
+          is_error: data.is_error || false,
           verified_sources: data.verified_sources || []
         };
         setMessages((prev) => [...prev, assistantMsg]);
-        setExpandedThoughtId(assistantMsg.id); // Auto-expand latest thought process
+        setExpandedThoughtId(assistantMsg.id);
       } else {
+        const errData = await res.json().catch(() => ({}));
         setMessages((prev) => [
           ...prev,
           {
             id: Date.now() + 1,
             sender: 'assistant',
-            text: "Sorry, I encountered an issue communicating with the backend tools. Please try again.",
-            is_demo: true
+            text: `⚠️ **Service Error:** ${errData.detail || "Encountered an issue communicating with the backend. Please try again."}`,
+            is_demo: false,
+            is_error: true
           }
         ]);
       }
@@ -131,8 +149,9 @@ export default function AIAssistant() {
         {
           id: Date.now() + 1,
           sender: 'assistant',
-          text: "Network error: Unable to reach the agentic server. Please ensure the backend is running.",
-          is_demo: true
+          text: "Network error: Unable to reach the campus agent service. Please ensure the backend server is running.",
+          is_demo: true,
+          is_error: true
         }
       ]);
     } finally {
@@ -140,48 +159,35 @@ export default function AIAssistant() {
     }
   };
 
+  const studentDisplayName = aiSettings?.student_name ? `${aiSettings.student_name} (Student)` : 'Student';
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 126px)', gap: '16px' }}>
-      {/* Header Info Banner */}
-      <div style={{
-        backgroundColor: '#FFFFFF',
-        border: '1px solid #DCE5F0',
-        borderRadius: '12px',
-        padding: '14px 20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '12px',
-        boxShadow: 'var(--shadow-sm)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '8px',
-            backgroundColor: '#EFF6FF',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#2563EB'
-          }}>
-            <Sparkles size={18} />
-          </div>
-          <div>
-            <div style={{ fontSize: '15px', fontWeight: '700', color: '#163A63' }}>
-              Campus Agent Intelligence Console
-            </div>
-            <div style={{ fontSize: '12px', color: '#64748B' }}>
-              Structured Tool Calling &bull; Document RAG &bull; Verified Citations
-            </div>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', gap: '16px' }}>
+      {/* Top Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
+            CampusMate AI Assistant
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '2px', marginBottom: 0 }}>
+            Conversational agent backed by your academic database and official institutional policies.
+          </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span className="badge badge-warning" style={{ fontSize: '11px', textTransform: 'none' }}>
-            <Zap size={13} /> Demo Mode (Autonomous Agent Engine)
-          </span>
+          {aiSettings?.ai_mode === 'openai' ? (
+            <span className="badge badge-success" style={{ fontSize: '11px', textTransform: 'none', backgroundColor: '#DCFCE7', color: '#166534', border: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <Sparkles size={13} /> OpenAI (GPT-4o) Active
+            </span>
+          ) : aiSettings?.ai_mode === 'gemini' ? (
+            <span className="badge badge-success" style={{ fontSize: '11px', textTransform: 'none', backgroundColor: '#DCFCE7', color: '#166534', border: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <Sparkles size={13} /> Google Gemini Active
+            </span>
+          ) : (
+            <span className="badge badge-burgundy" style={{ fontSize: '11px', textTransform: 'none' }}>
+              <Zap size={13} /> Campus Agent Engine
+            </span>
+          )}
           <button 
             onClick={() => setMessages([messages[0]])}
             className="btn-secondary"
@@ -197,7 +203,7 @@ export default function AIAssistant() {
       <div style={{
         flex: 1,
         backgroundColor: '#FFFFFF',
-        border: '1px solid #DCE5F0',
+        border: '1px solid var(--border-color)',
         borderRadius: '12px',
         padding: '24px',
         overflowY: 'auto',
@@ -219,21 +225,29 @@ export default function AIAssistant() {
             <div style={{
               fontSize: '11px',
               fontWeight: '600',
-              color: '#64748B',
+              color: 'var(--text-secondary)',
               marginBottom: '6px',
               display: 'flex',
               alignItems: 'center',
               gap: '6px'
             }}>
               {msg.sender === 'user' ? (
-                <span>Alex Chen (Student)</span>
+                <span>{studentDisplayName}</span>
               ) : (
                 <>
-                  <Sparkles size={13} color="#2563EB" />
+                  <Sparkles size={13} color={msg.is_error ? "#DC2626" : "var(--primary)"} />
                   <span>CampusMate AI Agent</span>
-                  {msg.is_demo && (
-                    <span style={{ fontSize: '10px', color: '#B45309', backgroundColor: '#FFF1CC', padding: '1px 5px', borderRadius: '4px' }}>
-                      Agent Engine
+                  {msg.is_error ? (
+                    <span style={{ fontSize: '10px', color: '#991B1B', backgroundColor: '#FEE2E2', padding: '1px 5px', borderRadius: '4px' }}>
+                      Service Alert
+                    </span>
+                  ) : msg.is_demo ? (
+                    <span className="badge badge-demo" style={{ fontSize: '10px', padding: '1px 5px' }}>
+                      Demo Mode
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: '10px', color: '#166534', backgroundColor: '#DCFCE7', padding: '1px 5px', borderRadius: '4px' }}>
+                      Live DB
                     </span>
                   )}
                 </>
@@ -245,21 +259,34 @@ export default function AIAssistant() {
               maxWidth: '85%',
               padding: '16px 20px',
               borderRadius: '12px',
-              backgroundColor: msg.sender === 'user' ? '#163A63' : '#F5F8FC',
-              color: msg.sender === 'user' ? '#FFFFFF' : '#172B4D',
-              border: msg.sender === 'user' ? 'none' : '1px solid #DCE5F0',
+              backgroundColor: msg.sender === 'user' ? 'var(--primary)' : (msg.is_error ? '#FEF2F2' : 'var(--bg-subtle)'),
+              color: msg.sender === 'user' ? '#FFFFFF' : (msg.is_error ? '#7F1D1D' : 'var(--text-primary)'),
+              border: msg.sender === 'user' ? 'none' : (msg.is_error ? '1px solid #FECACA' : '1px solid var(--border-color)'),
               fontSize: '14px',
               lineHeight: 1.6,
               whiteSpace: 'pre-wrap'
             }}>
               {msg.text}
 
+              {/* Error Actions */}
+              {msg.is_error && (
+                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #FCA5A5' }}>
+                  <button 
+                    onClick={() => navigate('/settings')}
+                    className="btn-secondary"
+                    style={{ padding: '6px 12px', fontSize: '12px', backgroundColor: '#FFFFFF', color: '#991B1B', borderColor: '#FCA5A5' }}
+                  >
+                    Open Settings & Check AI Configuration &rarr;
+                  </button>
+                </div>
+              )}
+
               {/* Verified Sources Badge & Citations */}
               {msg.verified_sources && msg.verified_sources.length > 0 && (
                 <div style={{
                   marginTop: '14px',
                   paddingTop: '12px',
-                  borderTop: '1px solid #DCE5F0',
+                  borderTop: '1px solid var(--border-color)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '6px'
@@ -272,8 +299,8 @@ export default function AIAssistant() {
                       key={idx}
                       style={{
                         fontSize: '12px',
-                        backgroundColor: '#DDF5E5',
-                        border: '1px solid #bbf7d0',
+                        backgroundColor: '#DCFCE7',
+                        border: '1px solid #BBF7D0',
                         color: '#166534',
                         padding: '6px 10px',
                         borderRadius: '6px',
@@ -295,7 +322,7 @@ export default function AIAssistant() {
                   marginTop: '12px',
                   padding: '12px',
                   backgroundColor: '#FFFFFF',
-                  border: '1px solid #DCE5F0',
+                  border: '1px solid var(--border-color)',
                   borderRadius: '8px',
                   display: 'flex',
                   alignItems: 'center',
@@ -303,14 +330,14 @@ export default function AIAssistant() {
                   gap: '12px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', backgroundColor: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
                       <CheckSquare size={16} />
                     </div>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#163A63' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--primary-dark)' }}>
                         {msg.tool_output.task.title}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#64748B' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                         Course: {msg.tool_output.task.course} &bull; Due: {msg.tool_output.task.due_date}
                       </div>
                     </div>
@@ -330,7 +357,7 @@ export default function AIAssistant() {
                   marginTop: '12px',
                   padding: '12px',
                   backgroundColor: '#FFFFFF',
-                  border: '1px solid #DCE5F0',
+                  border: '1px solid var(--border-color)',
                   borderRadius: '8px',
                   display: 'flex',
                   alignItems: 'center',
@@ -338,14 +365,14 @@ export default function AIAssistant() {
                   gap: '12px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', backgroundColor: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
                       <Calendar size={16} />
                     </div>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#163A63' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--primary-dark)' }}>
                         {msg.tool_output.subject} Roadmap
                       </div>
-                      <div style={{ fontSize: '11px', color: '#64748B' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                         {msg.tool_output.total_days} Days &bull; Exam: {msg.tool_output.target_exam_date}
                       </div>
                     </div>
@@ -385,14 +412,13 @@ export default function AIAssistant() {
               )}
             </div>
 
-
             {/* Step-by-Step Agent Thought Process Accordion */}
             {msg.thought_process && msg.thought_process.length > 0 && (
               <div style={{
                 marginTop: '8px',
                 maxWidth: '85%',
-                backgroundColor: '#EFF6FF',
-                border: '1px solid #DBEAFE',
+                backgroundColor: 'var(--primary-subtle)',
+                border: '1px solid #F8D7DA',
                 borderRadius: '8px',
                 overflow: 'hidden'
               }}>
@@ -409,21 +435,21 @@ export default function AIAssistant() {
                     cursor: 'pointer',
                     fontSize: '12px',
                     fontWeight: '600',
-                    color: '#163A63'
+                    color: 'var(--primary-dark)'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Terminal size={14} color="#2563EB" />
-                    <span>Agent Reasoning & Steps ({msg.thought_process.length})</span>
+                    <Terminal size={14} color="var(--primary)" />
+                    <span>Agent Reasoning & Database Calls ({msg.thought_process.length})</span>
                   </div>
                   {expandedThoughtId === msg.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </button>
 
                 {expandedThoughtId === msg.id && (
-                  <div style={{ padding: '8px 14px 12px', borderTop: '1px solid #DBEAFE', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ padding: '8px 14px 12px', borderTop: '1px solid #F8D7DA', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {msg.thought_process.map((step, idx) => (
-                      <div key={idx} style={{ fontSize: '12px', color: '#1E40AF', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                        <span style={{ color: '#2563EB', fontWeight: '700' }}>›</span>
+                      <div key={idx} style={{ fontSize: '12px', color: 'var(--primary)', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                        <span style={{ color: 'var(--primary)', fontWeight: '700' }}>›</span>
                         <span>{step}</span>
                       </div>
                     ))}
@@ -438,7 +464,7 @@ export default function AIAssistant() {
                 marginTop: '6px',
                 maxWidth: '85%',
                 backgroundColor: '#FFFFFF',
-                border: '1px solid #DCE5F0',
+                border: '1px solid var(--border-color)',
                 borderRadius: '8px',
                 overflow: 'hidden'
               }}>
@@ -455,28 +481,28 @@ export default function AIAssistant() {
                     cursor: 'pointer',
                     fontSize: '11px',
                     fontWeight: '600',
-                    color: '#64748B'
+                    color: 'var(--text-secondary)'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Layers size={13} color="#2563EB" />
+                    <Layers size={13} color="var(--primary)" />
                     <span>Tool Called: <code>{msg.tool_called}</code></span>
                   </div>
                   {expandedToolId === msg.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                 </button>
 
                 {expandedToolId === msg.id && (
-                  <div style={{ padding: '8px 12px', borderTop: '1px solid #DCE5F0', backgroundColor: '#F8FAFC', fontSize: '11px' }}>
+                  <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-subtle)', fontSize: '11px' }}>
                     <div style={{ marginBottom: '6px' }}>
-                      <strong style={{ color: '#163A63' }}>Parameters:</strong>
-                      <pre style={{ margin: '4px 0', padding: '6px', backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '4px', overflowX: 'auto' }}>
+                      <strong style={{ color: 'var(--primary-dark)' }}>Parameters:</strong>
+                      <pre style={{ margin: '4px 0', padding: '6px', backgroundColor: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '4px', overflowX: 'auto' }}>
                         {JSON.stringify(msg.tool_input, null, 2)}
                       </pre>
                     </div>
                     {msg.tool_output && (
                       <div>
-                        <strong style={{ color: '#163A63' }}>Execution Result:</strong>
-                        <pre style={{ margin: '4px 0', padding: '6px', backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '4px', overflowX: 'auto' }}>
+                        <strong style={{ color: 'var(--primary-dark)' }}>Execution Result:</strong>
+                        <pre style={{ margin: '4px 0', padding: '6px', backgroundColor: '#FFFFFF', border: '1px solid var(--border-color)', borderRadius: '4px', overflowX: 'auto' }}>
                           {JSON.stringify(msg.tool_output, null, 2)}
                         </pre>
                       </div>
@@ -489,9 +515,9 @@ export default function AIAssistant() {
         ))}
 
         {isProcessing && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#2563EB', fontSize: '13px', padding: '8px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)', fontSize: '13px', padding: '8px 0' }}>
             <Sparkles size={16} className="animate-spin" />
-            <span>Agent evaluating goals, selecting tools, and querying database...</span>
+            <span>Agent evaluating prompt, invoking tools, and querying database...</span>
           </div>
         )}
 
@@ -506,19 +532,27 @@ export default function AIAssistant() {
             onClick={() => handleSend(s)}
             disabled={isProcessing}
             style={{
-              padding: '6px 12px',
+              padding: '6px 14px',
               backgroundColor: '#FFFFFF',
-              border: '1px solid #DCE5F0',
+              border: '1px solid var(--border-color)',
               borderRadius: '20px',
               fontSize: '12px',
-              color: '#163A63',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               transition: 'all 0.15s ease',
               flexShrink: 0
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#EFF6FF'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--primary-subtle)';
+              e.currentTarget.style.borderColor = 'var(--primary)';
+              e.currentTarget.style.color = 'var(--primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#FFFFFF';
+              e.currentTarget.style.borderColor = 'var(--border-color)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
           >
             {s}
           </button>
@@ -535,7 +569,7 @@ export default function AIAssistant() {
           display: 'flex',
           gap: '10px',
           backgroundColor: '#FFFFFF',
-          border: '1px solid #DCE5F0',
+          border: '1px solid var(--border-color)',
           borderRadius: '12px',
           padding: '8px 12px',
           boxShadow: 'var(--shadow-sm)'
@@ -553,7 +587,7 @@ export default function AIAssistant() {
             outline: 'none',
             fontSize: '14px',
             fontFamily: 'inherit',
-            color: '#172B4D'
+            color: 'var(--text-primary)'
           }}
         />
         <button

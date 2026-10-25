@@ -9,8 +9,7 @@ import {
   Users, 
   BookOpen, 
   Settings as SettingsIcon,
-  ShieldAlert,
-  Zap,
+  Zap, 
   X
 } from 'lucide-react';
 
@@ -28,6 +27,13 @@ const navItems = [
 export default function Sidebar({ isOpen, onClose, userSettings }) {
   const isDemo = !userSettings?.ai_mode || userSettings.ai_mode === 'demo';
 
+  const getInitials = (name) => {
+    if (!name) return 'AC';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -37,9 +43,9 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(22, 58, 99, 0.5)',
+            backgroundColor: 'rgba(56, 7, 16, 0.55)',
             zIndex: 90,
-            backdropFilter: 'blur(2px)'
+            backdropFilter: 'blur(3px)'
           }}
           className="md-hidden"
         />
@@ -48,7 +54,7 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
       <aside 
         style={{
           width: '260px',
-          backgroundColor: '#163A63',
+          backgroundColor: '#380710',
           color: '#FFFFFF',
           display: 'flex',
           flexDirection: 'column',
@@ -57,16 +63,16 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
           transition: 'transform 0.25s ease',
-          boxShadow: '2px 0 10px rgba(0,0,0,0.05)'
+          boxShadow: '2px 0 12px rgba(56, 7, 16, 0.15)'
         }}
         className={isOpen ? 'sidebar-open' : 'sidebar-closed'}
       >
         {/* Brand Header */}
         <div style={{
           padding: '24px 20px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
@@ -76,19 +82,20 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
               width: '40px',
               height: '40px',
               borderRadius: '10px',
-              backgroundColor: '#2563EB',
+              backgroundColor: '#7B1123',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 10px rgba(37, 99, 235, 0.4)'
+              boxShadow: '0 4px 12px rgba(123, 17, 35, 0.4)'
             }}>
               <Sparkles size={22} color="#FFFFFF" />
             </div>
             <div>
               <div style={{ fontSize: '18px', fontWeight: '700', letterSpacing: '-0.02em', color: '#FFFFFF' }}>
-                CampusMate <span style={{ color: '#DBEAFE', fontWeight: '500' }}>AI</span>
+                CampusMate <span style={{ color: '#F3CCD3', fontWeight: '500' }}>AI</span>
               </div>
-              <div style={{ fontSize: '11px', color: '#DBEAFE', opacity: 0.8 }}>
+              <div style={{ fontSize: '11px', color: '#E5E7EB', opacity: 0.85 }}>
                 Intelligent Companion
               </div>
             </div>
@@ -104,6 +111,7 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
               cursor: 'pointer',
               padding: '4px'
             }}
+            aria-label="Close sidebar"
           >
             <X size={20} />
           </button>
@@ -115,7 +123,7 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
             fontSize: '11px',
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
-            color: '#93c5fd',
+            color: '#D1D5DB',
             padding: '8px 12px 12px 12px',
             fontWeight: '600'
           }}>
@@ -141,8 +149,8 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
                     textDecoration: 'none',
                     fontSize: '14px',
                     fontWeight: isActive ? '600' : '400',
-                    color: isActive ? '#163A63' : 'rgba(255, 255, 255, 0.85)',
-                    backgroundColor: isActive ? '#DBEAFE' : 'transparent',
+                    color: isActive ? '#7B1123' : '#E5E7EB',
+                    backgroundColor: isActive ? '#FDF2F4' : 'transparent',
                     transition: 'all 0.15s ease'
                   })}
                 >
@@ -152,7 +160,7 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
                   </div>
                   {item.badge && (
                     <span style={{
-                      backgroundColor: 'rgba(37, 99, 235, 0.4)',
+                      backgroundColor: 'rgba(253, 242, 244, 0.2)',
                       color: '#FFFFFF',
                       fontSize: '10px',
                       padding: '2px 6px',
@@ -171,27 +179,27 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
         {/* Bottom Profile & Mode Card */}
         <div style={{
           padding: '16px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          backgroundColor: 'rgba(0, 0, 0, 0.15)'
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          backgroundColor: 'rgba(0, 0, 0, 0.2)'
         }}>
           {/* Demo Mode / Live Mode Indicator */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            backgroundColor: isDemo ? 'rgba(255, 241, 204, 0.15)' : 'rgba(221, 245, 229, 0.15)',
-            border: isDemo ? '1px solid rgba(255, 241, 204, 0.3)' : '1px solid rgba(221, 245, 229, 0.3)',
+            backgroundColor: isDemo ? 'rgba(254, 243, 199, 0.12)' : 'rgba(221, 245, 229, 0.12)',
+            border: isDemo ? '1px solid rgba(254, 243, 199, 0.25)' : '1px solid rgba(221, 245, 229, 0.25)',
             padding: '8px 10px',
             borderRadius: '8px',
             marginBottom: '12px'
           }}>
             {isDemo ? (
-              <Zap size={15} color="#FFF1CC" />
+              <Zap size={15} color="#FDE68A" />
             ) : (
               <Sparkles size={15} color="#DDF5E5" />
             )}
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '11px', fontWeight: '600', color: isDemo ? '#FFF1CC' : '#DDF5E5' }}>
+              <div style={{ fontSize: '11px', fontWeight: '600', color: isDemo ? '#FDE68A' : '#DDF5E5' }}>
                 {isDemo ? 'Autonomous Agent (Demo)' : 'Live AI Agent Connected'}
               </div>
               <div style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.7)' }}>
@@ -206,15 +214,17 @@ export default function Sidebar({ isOpen, onClose, userSettings }) {
               width: '36px',
               height: '36px',
               borderRadius: '50%',
-              backgroundColor: '#DBEAFE',
-              color: '#163A63',
+              backgroundColor: '#FDF2F4',
+              color: '#7B1123',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: '700',
-              fontSize: '14px'
+              fontSize: '13px',
+              flexShrink: 0
             }}>
-              AC
+              {getInitials(userSettings?.student_name)}
             </div>
             <div style={{ overflow: 'hidden' }}>
               <div style={{ fontSize: '13px', fontWeight: '600', color: '#FFFFFF', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>

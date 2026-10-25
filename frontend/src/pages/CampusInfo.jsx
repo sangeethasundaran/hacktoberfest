@@ -8,7 +8,7 @@ import {
   ShieldCheck, 
   ExternalLink, 
   Sparkles, 
-  X,
+  X, 
   FileCheck2,
   FolderOpen,
   Send,
@@ -38,7 +38,6 @@ export default function CampusInfo() {
   const [docCategory, setDocCategory] = useState('Academic Policy');
   const [docFile, setDocFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-
 
   const fetchDocuments = async () => {
     try {
@@ -139,11 +138,11 @@ export default function CampusInfo() {
       {/* Top Banner */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#163A63' }}>
-            Campus Information & Document Knowledge Base
+          <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--primary-dark)' }}>
+            Campus Information & Knowledge Base
           </h2>
-          <p style={{ color: '#64748B', fontSize: '14px', marginTop: '4px' }}>
-            Source-backed repository for academic regulations, attendance policies, handbooks, and syllabi.
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
+            Source-backed repository for academic regulations, attendance policies, handbooks, and course syllabi.
           </p>
         </div>
 
@@ -162,10 +161,10 @@ export default function CampusInfo() {
           style={{ display: 'flex', gap: '12px', alignItems: 'center' }}
         >
           <div style={{ position: 'relative', flex: 1 }}>
-            <Search size={18} color="#64748B" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+            <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
-              placeholder="Search policies (e.g. '75% attendance rule', 'late submission penalties', 'library fines')..."
+              placeholder="Search policies (e.g. '75% attendance rule', 'late submission penalties', 'library hours')..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="form-input"
@@ -196,15 +195,19 @@ export default function CampusInfo() {
       {searchResults && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={18} color="#2563EB" />
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63' }}>
-              RAG Search Matches for "{searchResults.query}" ({searchResults.results_count})
+            <Sparkles size={18} color="var(--primary)" />
+            <h3 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--primary-dark)' }}>
+              RAG Matches for "{searchResults.query}" ({searchResults.results_count})
             </h3>
           </div>
 
           {searchResults.results.length === 0 ? (
-            <div className="campus-card" style={{ padding: '30px', textAlign: 'center', color: '#64748B' }}>
-              No matches found. Try broader keywords like "attendance", "grading", or "library".
+            <div className="empty-state">
+              <BookOpen className="empty-state-icon" />
+              <div className="empty-state-title">No Document Matches Found</div>
+              <div className="empty-state-desc">
+                No policy matches found for your query. Try broader keywords like "attendance", "grading", or "regulations".
+              </div>
             </div>
           ) : (
             searchResults.results.map((hit) => (
@@ -212,33 +215,33 @@ export default function CampusInfo() {
                 key={hit.id}
                 className="campus-card"
                 style={{
-                  borderLeft: '4px solid #2563EB',
+                  borderLeft: '4px solid var(--primary)',
                   padding: '20px'
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="badge badge-blue">{hit.category}</span>
+                    <span className="badge badge-burgundy">{hit.category}</span>
                     <span style={{ fontSize: '12px', color: '#166534', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <ShieldCheck size={14} /> Verified Source: {hit.source_file}
                     </span>
                   </div>
-                  <span style={{ fontSize: '12px', color: '#64748B' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                     Relevance Score: {hit.score}
                   </span>
                 </div>
 
-                <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#163A63', marginBottom: '8px' }}>
+                <h4 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--primary-dark)', marginBottom: '8px' }}>
                   {hit.title}
                 </h4>
 
                 <div style={{
                   fontSize: '13px',
-                  backgroundColor: '#EFF6FF',
+                  backgroundColor: 'var(--primary-subtle)',
                   padding: '10px 14px',
                   borderRadius: '6px',
-                  border: '1px solid #DBEAFE',
-                  color: '#172B4D',
+                  border: '1px solid #F8D7DA',
+                  color: 'var(--text-primary)',
                   fontStyle: 'italic',
                   marginBottom: '10px',
                   lineHeight: 1.5
@@ -246,7 +249,7 @@ export default function CampusInfo() {
                   "{hit.snippet}"
                 </div>
 
-                <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
                   <strong>Summary:</strong> {hit.summary}
                 </p>
               </div>
@@ -257,62 +260,72 @@ export default function CampusInfo() {
 
       {/* All Documents Repository Grid */}
       <div>
-        <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#163A63', marginBottom: '16px' }}>
+        <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)', marginBottom: '16px' }}>
           Official Documents Repository ({documents.length})
         </h3>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '20px'
-        }}>
-          {documents.map((doc) => (
-            <div
-              key={doc.id}
-              className="campus-card"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                cursor: 'pointer'
-              }}
-              onClick={() => setSelectedDoc(doc)}
-            >
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <span className="badge badge-blue">{doc.category}</span>
-                  <span className="badge badge-neutral" style={{ fontSize: '10px' }}>{doc.file_type}</span>
+        {documents.length === 0 ? (
+          <div className="empty-state">
+            <BookOpen className="empty-state-icon" />
+            <div className="empty-state-title">No Documents Ingested Yet</div>
+            <div className="empty-state-desc">
+              Upload institutional policies, syllabi, or student handbooks to allow CampusMate AI to answer grounded questions.
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: '20px'
+          }}>
+            {documents.map((doc) => (
+              <div
+                key={doc.id}
+                className="campus-card"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setSelectedDoc(doc)}
+              >
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span className="badge badge-burgundy">{doc.category}</span>
+                    <span className="badge badge-grey" style={{ fontSize: '10px' }}>{doc.file_type}</span>
+                  </div>
+
+                  <h4 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--primary-dark)', marginBottom: '8px', lineHeight: 1.4 }}>
+                    {doc.title}
+                  </h4>
+
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '14px' }}>
+                    {doc.summary}
+                  </p>
                 </div>
 
-                <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#163A63', marginBottom: '8px', lineHeight: 1.4 }}>
-                  {doc.title}
-                </h4>
-
-                <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5, marginBottom: '14px' }}>
-                  {doc.summary}
-                </p>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingTop: '12px',
+                  borderTop: '1px solid var(--border-color)',
+                  fontSize: '12px',
+                  color: 'var(--primary)',
+                  fontWeight: '500'
+                }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>
+                    {doc.source_file || `${doc.title}.pdf`}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    Read Content &rarr;
+                  </span>
+                </div>
               </div>
-
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingTop: '12px',
-                borderTop: '1px solid #DCE5F0',
-                fontSize: '12px',
-                color: '#2563EB',
-                fontWeight: '500'
-              }}>
-                <span style={{ color: '#64748B', fontSize: '11px' }}>
-                  {doc.source_file || `${doc.title}.pdf`}
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  Read Content &rarr;
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Modal: Document Detail */}
@@ -325,8 +338,8 @@ export default function CampusInfo() {
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ padding: '28px', maxWidth: '700px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
-                <span className="badge badge-blue" style={{ marginBottom: '6px' }}>{selectedDoc.category}</span>
-                <h3 style={{ fontSize: '19px', fontWeight: '700', color: '#163A63' }}>
+                <span className="badge badge-burgundy" style={{ marginBottom: '6px' }}>{selectedDoc.category}</span>
+                <h3 style={{ fontSize: '19px', fontWeight: '700', color: 'var(--primary-dark)' }}>
                   {selectedDoc.title}
                 </h3>
                 <div style={{ fontSize: '12px', color: '#166534', fontWeight: '600', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -339,21 +352,20 @@ export default function CampusInfo() {
                   setDocAnswer(null);
                   setDocQuestion('');
                 }}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748B' }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
               >
                 <X size={20} />
               </button>
             </div>
 
-
             {/* AI Summary */}
             <div style={{
-              backgroundColor: '#EFF6FF',
-              border: '1px solid #DBEAFE',
+              backgroundColor: 'var(--primary-subtle)',
+              border: '1px solid #F8D7DA',
               borderRadius: '8px',
               padding: '12px 16px',
               fontSize: '13px',
-              color: '#1E40AF',
+              color: 'var(--primary)',
               marginBottom: '16px',
               lineHeight: 1.5
             }}>
@@ -362,15 +374,15 @@ export default function CampusInfo() {
 
             {/* Full text content */}
             <div style={{
-              backgroundColor: '#F5F8FC',
-              border: '1px solid #DCE5F0',
+              backgroundColor: 'var(--bg-subtle)',
+              border: '1px solid var(--border-color)',
               borderRadius: '8px',
               padding: '16px',
               maxHeight: '260px',
               overflowY: 'auto',
               fontSize: '13px',
               lineHeight: 1.6,
-              color: '#172B4D',
+              color: 'var(--text-primary)',
               whiteSpace: 'pre-wrap',
               marginBottom: '18px'
             }}>
@@ -379,21 +391,21 @@ export default function CampusInfo() {
 
             {/* Interactive Ask This Document Section */}
             <div style={{
-              borderTop: '1px solid #DCE5F0',
+              borderTop: '1px solid var(--border-color)',
               paddingTop: '18px',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: '14px', fontWeight: '700', color: '#163A63', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Sparkles size={16} color="#2563EB" /> Ask CampusMate About This Document
+                <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary-dark)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Sparkles size={16} color="var(--primary)" /> Ask CampusMate About This Document
                 </div>
                 <button
                   type="button"
                   onClick={() => navigate(`/assistant?prompt=${encodeURIComponent(`According to the official ${selectedDoc.title}: what are the key requirements?`)}`)}
-                  className="btn-tertiary"
-                  style={{ padding: '2px 6px', fontSize: '11px' }}
+                  className="btn-secondary"
+                  style={{ padding: '2px 8px', fontSize: '11px' }}
                 >
                   Open in AI Assistant &rarr;
                 </button>
@@ -420,8 +432,8 @@ export default function CampusInfo() {
 
               {docAnswer && (
                 <div style={{
-                  backgroundColor: '#DDF5E5',
-                  border: '1px solid #bbf7d0',
+                  backgroundColor: '#DCFCE7',
+                  border: '1px solid #BBF7D0',
                   borderRadius: '8px',
                   padding: '12px 16px',
                   fontSize: '13px',
@@ -441,18 +453,17 @@ export default function CampusInfo() {
         </div>
       )}
 
-
       {/* Modal: Ingest New Document */}
       {showUploadModal && (
         <div className="modal-overlay" onClick={() => setShowUploadModal(false)}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#163A63', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)', marginBottom: '16px' }}>
               Ingest Document into Campus Knowledge Base
             </h3>
 
             <form onSubmit={handleUploadSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                   Document Title *
                 </label>
                 <input
@@ -466,7 +477,7 @@ export default function CampusInfo() {
               </div>
 
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                   Document Category
                 </label>
                 <select
@@ -483,7 +494,7 @@ export default function CampusInfo() {
               </div>
 
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                   Select File (PDF or TXT) *
                 </label>
                 <input

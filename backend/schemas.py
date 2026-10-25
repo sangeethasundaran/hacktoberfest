@@ -11,6 +11,7 @@ class TaskBase(BaseModel):
     category: Optional[str] = "Assignment"
     status: Optional[str] = "Pending"
     estimated_hours: Optional[float] = 2.0
+    is_sample: Optional[bool] = False
 
 class TaskCreate(TaskBase):
     pass
@@ -24,9 +25,11 @@ class TaskUpdate(BaseModel):
     category: Optional[str] = None
     status: Optional[str] = None
     estimated_hours: Optional[float] = None
+    is_sample: Optional[bool] = None
 
 class TaskResponse(TaskBase):
     id: int
+    is_sample: bool = False
     created_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
@@ -46,6 +49,7 @@ class StudyPlanResponse(BaseModel):
     milestones: List[Dict[str, Any]] = []
     status: str
     progress_pct: int
+    is_sample: bool = False
     created_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
@@ -57,6 +61,7 @@ class ScheduleItemCreate(BaseModel):
     date: str
     location: Optional[str] = "Campus"
     notes: Optional[str] = ""
+    is_sample: Optional[bool] = False
 
 class ScheduleItemResponse(BaseModel):
     id: int
@@ -67,6 +72,7 @@ class ScheduleItemResponse(BaseModel):
     date: str
     location: str
     is_completed: bool
+    is_sample: bool = False
     notes: str
     model_config = ConfigDict(from_attributes=True)
 
@@ -86,9 +92,12 @@ class NoticeResponse(BaseModel):
     summary: str
     action_items: List[str] = []
     important_dates: List[str] = []
-    is_verified: bool
+    is_verified: bool = True
+    verification_notes: Optional[str] = "Verified Official Notice"
     source: str
+    source_url: Optional[str] = "https://cce.edu.in/"
     pdf_filename: Optional[str] = ""
+    is_sample: bool = False
     model_config = ConfigDict(from_attributes=True)
 
 class ClubEventResponse(BaseModel):
@@ -99,10 +108,32 @@ class ClubEventResponse(BaseModel):
     date: str
     time: str
     location: str
+    venue: Optional[str] = ""
+    organizer: Optional[str] = ""
     description: str
-    is_registered: bool
+    registration_deadline: Optional[str] = ""
+    registration_link: Optional[str] = ""
+    source_url: Optional[str] = "https://cce.edu.in/"
+    source_name: Optional[str] = "Christ College of Engineering Official Portal"
+    is_verified: bool = True
+    verification_notes: Optional[str] = "Official CCE Publication"
+    is_upcoming: bool = True
+    is_registered: bool = False
+    is_sample: bool = False
     tags: str
+    last_synced_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
+
+class CCESyncResponse(BaseModel):
+    success: bool
+    message: str
+    events_imported: int
+    events_updated: int
+    total_events: int
+    upcoming_events: int
+    past_events: int
+    last_synced_at: str
+    source_url: str
 
 class DocumentResponse(BaseModel):
     id: int
@@ -127,6 +158,7 @@ class AgentChatResponse(BaseModel):
     tool_input: Optional[Dict[str, Any]] = None
     tool_output: Optional[Any] = None
     is_demo: bool = True
+    is_error: bool = False
     verified_sources: List[Dict[str, str]] = []
 
 class SettingsUpdate(BaseModel):
@@ -138,6 +170,18 @@ class SettingsUpdate(BaseModel):
     ai_mode: Optional[str] = None
     api_key: Optional[str] = None
 
+class NotificationItem(BaseModel):
+    id: str
+    title: str
+    message: str
+    category: str  # 'deadline', 'exam', 'notice', 'event'
+    date: str
+    link: str
+    priority: Optional[str] = "Normal"
+
+class TaskBatchCreate(BaseModel):
+    tasks: List[TaskCreate]
+
 class DashboardStats(BaseModel):
     pending_tasks: int
     upcoming_exams: int
@@ -147,4 +191,8 @@ class DashboardStats(BaseModel):
     ai_recommendation: Dict[str, Any]
     deadlines: List[TaskResponse]
     today_schedule: List[ScheduleItemResponse]
+    weekly_velocity: List[Dict[str, Any]] = []
+    course_workload: List[Dict[str, Any]] = []
+    has_sample_data: bool = False
+    total_tasks: int = 0
     model_config = ConfigDict(from_attributes=True)

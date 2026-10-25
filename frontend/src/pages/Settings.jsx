@@ -9,7 +9,9 @@ import {
   Zap, 
   Key, 
   Database,
-  Cpu
+  Cpu,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function Settings({ onSettingsUpdated }) {
@@ -24,6 +26,7 @@ export default function Settings({ onSettingsUpdated }) {
   const [apiKey, setApiKey] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [clearSuccess, setClearSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchSettings = async () => {
@@ -60,6 +63,7 @@ export default function Settings({ onSettingsUpdated }) {
       if (res.ok) {
         setSavedSuccess(true);
         setApiKey('');
+        await fetchSettings();
         setTimeout(() => setSavedSuccess(false), 3000);
         if (onSettingsUpdated) onSettingsUpdated();
       }
@@ -68,8 +72,22 @@ export default function Settings({ onSettingsUpdated }) {
     }
   };
 
+  const handleClearSampleData = async () => {
+    if (!window.confirm("Purge all demonstration sample records? Your personal tasks, study plans, and custom schedule entries will be safely preserved.")) return;
+    try {
+      const res = await fetch('/api/clear-sample-data', { method: 'POST' });
+      if (res.ok) {
+        setClearSuccess(true);
+        setTimeout(() => setClearSuccess(false), 4000);
+        if (onSettingsUpdated) onSettingsUpdated();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleResetData = async () => {
-    if (!window.confirm("Restore sample campus data? This will reset all tasks, roadmaps, and notices to the clean demo state.")) return;
+    if (!window.confirm("Restore default sample campus records? This will re-seed sample tasks and plans alongside existing data.")) return;
     try {
       const res = await fetch('/api/reset-data', { method: 'POST' });
       if (res.ok) {
@@ -86,18 +104,18 @@ export default function Settings({ onSettingsUpdated }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', maxWidth: '900px' }}>
       {/* Header */}
       <div>
-        <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#163A63' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
           System & AI Configuration
         </h2>
-        <p style={{ color: '#64748B', fontSize: '14px', marginTop: '4px' }}>
-          Manage your student profile, configure AI execution mode, and inspect system diagnostics.
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px', marginBottom: 0 }}>
+          Manage your student profile, configure AI execution mode, and manage database records.
         </p>
       </div>
 
       {savedSuccess && (
         <div style={{
-          backgroundColor: '#DDF5E5',
-          border: '1px solid #bbf7d0',
+          backgroundColor: '#DCFCE7',
+          border: '1px solid #BBF7D0',
           color: '#166534',
           padding: '12px 18px',
           borderRadius: '8px',
@@ -110,11 +128,11 @@ export default function Settings({ onSettingsUpdated }) {
         </div>
       )}
 
-      {resetSuccess && (
+      {clearSuccess && (
         <div style={{
-          backgroundColor: '#EFF6FF',
-          border: '1px solid #DBEAFE',
-          color: '#1E40AF',
+          backgroundColor: 'var(--primary-subtle)',
+          border: '1px solid #F8D7DA',
+          color: 'var(--primary)',
           padding: '12px 18px',
           borderRadius: '8px',
           fontSize: '14px',
@@ -122,22 +140,38 @@ export default function Settings({ onSettingsUpdated }) {
           alignItems: 'center',
           gap: '8px'
         }}>
-          <RotateCcw size={16} /> Campus database has been reset to official sample state.
+          <CheckCircle2 size={16} /> Sample demonstration records removed. All user-created records preserved.
+        </div>
+      )}
+
+      {resetSuccess && (
+        <div style={{
+          backgroundColor: '#DCFCE7',
+          border: '1px solid #BBF7D0',
+          color: '#166534',
+          padding: '12px 18px',
+          borderRadius: '8px',
+          fontSize: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <RotateCcw size={16} /> Campus database has been reset with demonstration seed records.
         </div>
       )}
 
       {/* AI Agent Configuration Card */}
       <div className="campus-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-          <Sparkles size={20} color="#2563EB" />
-          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#163A63' }}>
+          <Sparkles size={20} color="var(--primary)" />
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
             AI Agent Mode & Engine
           </h3>
         </div>
 
         <div style={{
-          backgroundColor: settings.ai_mode === 'demo' ? '#FFF1CC' : '#DDF5E5',
-          border: settings.ai_mode === 'demo' ? '1px solid #fde047' : '1px solid #bbf7d0',
+          backgroundColor: settings.ai_mode === 'demo' ? 'var(--primary-subtle)' : '#DCFCE7',
+          border: settings.ai_mode === 'demo' ? '1px solid #F8D7DA' : '1px solid #BBF7D0',
           borderRadius: '8px',
           padding: '14px 18px',
           marginBottom: '20px',
@@ -146,17 +180,17 @@ export default function Settings({ onSettingsUpdated }) {
           gap: '12px'
         }}>
           {settings.ai_mode === 'demo' ? (
-            <Zap size={20} color="#B45309" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <Zap size={20} color="var(--primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
           ) : (
             <Sparkles size={20} color="#166534" style={{ flexShrink: 0, marginTop: '2px' }} />
           )}
           <div>
-            <div style={{ fontSize: '14px', fontWeight: '700', color: settings.ai_mode === 'demo' ? '#854D0E' : '#166534' }}>
-              {settings.ai_mode === 'demo' ? 'Current Mode: Autonomous Agent Engine (Demo Mode)' : 'Current Mode: Live External AI Service'}
+            <div style={{ fontSize: '14px', fontWeight: '700', color: settings.ai_mode === 'demo' ? 'var(--primary)' : '#166534' }}>
+              {settings.ai_mode === 'demo' ? 'Current Mode: Autonomous Agent Engine (Local Engine)' : 'Current Mode: Live External AI Service'}
             </div>
-            <p style={{ fontSize: '12px', color: '#172B4D', margin: '4px 0 0 0', lineHeight: 1.5 }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-primary)', margin: '4px 0 0 0', lineHeight: 1.5 }}>
               {settings.ai_mode === 'demo'
-                ? "The application is operating in fully-functional Autonomous Demo Mode. The agent understands intents, selects tools, writes tasks to SQLite, generates study plans, and retrieves verified policies without requiring an external paid API key."
+                ? "Operating in Autonomous Agent Mode. The system understands intents, queries SQLite, extracts tasks, generates study plans, and retrieves verified policies without requiring an external paid API key."
                 : "The application is connected to an external LLM API for live agentic reasoning."}
             </p>
           </div>
@@ -164,7 +198,7 @@ export default function Settings({ onSettingsUpdated }) {
 
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+            <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>
               Execution Mode
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
@@ -173,11 +207,11 @@ export default function Settings({ onSettingsUpdated }) {
                 alignItems: 'center',
                 gap: '10px',
                 padding: '12px 14px',
-                border: '1px solid #DCE5F0',
+                border: '1px solid var(--border-color)',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                backgroundColor: settings.ai_mode === 'demo' ? '#EFF6FF' : '#FFFFFF',
-                borderColor: settings.ai_mode === 'demo' ? '#2563EB' : '#DCE5F0'
+                backgroundColor: settings.ai_mode === 'demo' ? 'var(--primary-subtle)' : '#FFFFFF',
+                borderColor: settings.ai_mode === 'demo' ? 'var(--primary)' : 'var(--border-color)'
               }}>
                 <input
                   type="radio"
@@ -187,8 +221,8 @@ export default function Settings({ onSettingsUpdated }) {
                   onChange={(e) => setSettings({ ...settings, ai_mode: e.target.value })}
                 />
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#163A63' }}>Autonomous Demo Engine</div>
-                  <div style={{ fontSize: '11px', color: '#64748B' }}>Built-in rule & tool execution</div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--primary-dark)' }}>Autonomous Engine</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Built-in rule & tool execution</div>
                 </div>
               </label>
 
@@ -197,11 +231,11 @@ export default function Settings({ onSettingsUpdated }) {
                 alignItems: 'center',
                 gap: '10px',
                 padding: '12px 14px',
-                border: '1px solid #DCE5F0',
+                border: '1px solid var(--border-color)',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                backgroundColor: settings.ai_mode === 'openai' ? '#EFF6FF' : '#FFFFFF',
-                borderColor: settings.ai_mode === 'openai' ? '#2563EB' : '#DCE5F0'
+                backgroundColor: settings.ai_mode === 'openai' ? 'var(--primary-subtle)' : '#FFFFFF',
+                borderColor: settings.ai_mode === 'openai' ? 'var(--primary)' : 'var(--border-color)'
               }}>
                 <input
                   type="radio"
@@ -211,8 +245,8 @@ export default function Settings({ onSettingsUpdated }) {
                   onChange={(e) => setSettings({ ...settings, ai_mode: e.target.value })}
                 />
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#163A63' }}>OpenAI (GPT-4o)</div>
-                  <div style={{ fontSize: '11px', color: '#64748B' }}>Requires OPENAI_API_KEY</div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--primary-dark)' }}>OpenAI (GPT-4o)</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Requires OPENAI_API_KEY</div>
                 </div>
               </label>
 
@@ -221,11 +255,11 @@ export default function Settings({ onSettingsUpdated }) {
                 alignItems: 'center',
                 gap: '10px',
                 padding: '12px 14px',
-                border: '1px solid #DCE5F0',
+                border: '1px solid var(--border-color)',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                backgroundColor: settings.ai_mode === 'gemini' ? '#EFF6FF' : '#FFFFFF',
-                borderColor: settings.ai_mode === 'gemini' ? '#2563EB' : '#DCE5F0'
+                backgroundColor: settings.ai_mode === 'gemini' ? 'var(--primary-subtle)' : '#FFFFFF',
+                borderColor: settings.ai_mode === 'gemini' ? 'var(--primary)' : 'var(--border-color)'
               }}>
                 <input
                   type="radio"
@@ -235,8 +269,8 @@ export default function Settings({ onSettingsUpdated }) {
                   onChange={(e) => setSettings({ ...settings, ai_mode: e.target.value })}
                 />
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#163A63' }}>Google Gemini</div>
-                  <div style={{ fontSize: '11px', color: '#64748B' }}>Requires GEMINI_API_KEY</div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--primary-dark)' }}>Google Gemini</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Requires GEMINI_API_KEY</div>
                 </div>
               </label>
             </div>
@@ -244,18 +278,20 @@ export default function Settings({ onSettingsUpdated }) {
 
           {settings.ai_mode !== 'demo' && (
             <div>
-              <label style={{ fontSize: '13px', fontWeight: '600', color: '#163A63', display: 'block', marginBottom: '6px' }}>
-                Optional API Key
+              <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>
+                {settings.ai_mode === 'openai' ? 'OpenAI API Key' : 'Google Gemini API Key'}
               </label>
               <input
                 type="password"
-                placeholder="sk-..."
+                placeholder={settings.has_api_key ? "•••••••• (Key configured — enter to overwrite)" : (settings.ai_mode === 'openai' ? "sk-..." : "AIzaSy...")}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 className="form-input"
               />
-              <div style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>
-                Keys are never logged or exposed to the client.
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                {settings.has_api_key 
+                  ? "✓ An API key is active on the server. Enter a new key only if you wish to overwrite it."
+                  : "An API key is required for genuine AI responses in this mode."}
               </div>
             </div>
           )}
@@ -271,8 +307,8 @@ export default function Settings({ onSettingsUpdated }) {
       {/* Student Profile Card */}
       <div className="campus-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-          <User size={20} color="#2563EB" />
-          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#163A63' }}>
+          <User size={20} color="var(--primary)" />
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
             Student Profile Details
           </h3>
         </div>
@@ -280,7 +316,7 @@ export default function Settings({ onSettingsUpdated }) {
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                 Full Name
               </label>
               <input
@@ -291,7 +327,7 @@ export default function Settings({ onSettingsUpdated }) {
               />
             </div>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                 Student ID
               </label>
               <input
@@ -305,7 +341,7 @@ export default function Settings({ onSettingsUpdated }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                 Major / Department
               </label>
               <input
@@ -316,7 +352,7 @@ export default function Settings({ onSettingsUpdated }) {
               />
             </div>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                 Current Semester
               </label>
               <input
@@ -329,7 +365,7 @@ export default function Settings({ onSettingsUpdated }) {
           </div>
 
           <div>
-            <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+            <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
               University Email
             </label>
             <input
@@ -348,58 +384,84 @@ export default function Settings({ onSettingsUpdated }) {
         </form>
       </div>
 
-      {/* System Diagnostics & Database Reset */}
+      {/* System Diagnostics & Database Management */}
       <div className="campus-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-          <Database size={20} color="#2563EB" />
-          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#163A63' }}>
-            Diagnostics & Database Management
+          <Database size={20} color="var(--primary)" />
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
+            Database & Demonstration Data Management
           </h3>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-          <div style={{ padding: '12px', backgroundColor: '#F5F8FC', borderRadius: '8px', border: '1px solid #DCE5F0' }}>
-            <div style={{ fontSize: '11px', color: '#64748B' }}>Backend API</div>
+          <div style={{ padding: '12px', backgroundColor: 'var(--bg-subtle)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Backend API</div>
             <div style={{ fontSize: '14px', fontWeight: '700', color: '#166534', marginTop: '2px' }}>
               ● FastAPI Online (Port 8000)
             </div>
           </div>
-          <div style={{ padding: '12px', backgroundColor: '#F5F8FC', borderRadius: '8px', border: '1px solid #DCE5F0' }}>
-            <div style={{ fontSize: '11px', color: '#64748B' }}>Database Engine</div>
+          <div style={{ padding: '12px', backgroundColor: 'var(--bg-subtle)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Database Engine</div>
             <div style={{ fontSize: '14px', fontWeight: '700', color: '#166534', marginTop: '2px' }}>
               ● SQLite / campusmate.db
             </div>
           </div>
-          <div style={{ padding: '12px', backgroundColor: '#F5F8FC', borderRadius: '8px', border: '1px solid #DCE5F0' }}>
-            <div style={{ fontSize: '11px', color: '#64748B' }}>Agentic Tools</div>
+          <div style={{ padding: '12px', backgroundColor: 'var(--bg-subtle)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Agentic Tools</div>
             <div style={{ fontSize: '14px', fontWeight: '700', color: '#166534', marginTop: '2px' }}>
               ● 10 Tools Loaded & Bound
             </div>
           </div>
         </div>
 
+        {/* Clear Demonstration Data */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '16px 0',
+          borderTop: '1px solid var(--border-color)'
+        }}>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--primary-dark)' }}>
+              Clear Demonstration Records
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              Removes sample tasks, demo roadmaps, and mock schedules. User-created records and uploaded documents are strictly preserved.
+            </div>
+          </div>
+
+          <button
+            onClick={handleClearSampleData}
+            className="btn-secondary"
+            style={{ color: '#991B1B', borderColor: '#FECACA', backgroundColor: '#FEF2F2' }}
+          >
+            <Trash2 size={14} /> Clear Demo Data
+          </button>
+        </div>
+
+        {/* Restore Sample Data */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           paddingTop: '16px',
-          borderTop: '1px solid #DCE5F0'
+          borderTop: '1px solid var(--border-color)'
         }}>
           <div>
-            <div style={{ fontSize: '14px', fontWeight: '600', color: '#163A63' }}>
-              Restore Demo Database
+            <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--primary-dark)' }}>
+              Restore Sample Seed Records
             </div>
-            <div style={{ fontSize: '12px', color: '#64748B' }}>
-              Re-populate sample courses, pending assignments, notices, and club events.
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              Re-populate sample courses, pending assignments, notices, and club events for testing and showcase.
             </div>
           </div>
 
           <button
             onClick={handleResetData}
             className="btn-secondary"
-            style={{ color: '#2563EB', borderColor: '#2563EB' }}
           >
-            <RotateCcw size={14} /> Reset Campus Data
+            <RotateCcw size={14} /> Re-seed Demo Data
           </button>
         </div>
       </div>

@@ -9,7 +9,8 @@ import {
   Filter, 
   CheckCircle2, 
   X,
-  ExternalLink
+  ExternalLink,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function Notices() {
@@ -102,23 +103,31 @@ export default function Notices() {
     setUploadFile(null);
   };
 
-  const categories = ['All', 'Academic', 'Administrative', 'Placement', 'Hostel'];
+  const categories = ['All', 'Examination', 'Academic', 'Administrative', 'Placement', 'Hostel'];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#163A63' }}>
-            Campus Notices & Bulletins
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span className="badge badge-burgundy" style={{ fontSize: '11px', textTransform: 'uppercase' }}>
+              Christ College of Engineering (Autonomous)
+            </span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              Examination Cell & Academic Circulars
+            </span>
+          </div>
+          <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
+            Campus Notices & Circulars
           </h2>
-          <p style={{ color: '#64748B', fontSize: '14px', marginTop: '4px' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px', marginBottom: 0 }}>
             Official university circulars with automated AI summaries, key dates, and actionable tasks.
           </p>
         </div>
 
         <button className="btn-primary" onClick={() => setShowUploadModal(true)}>
-          <Upload size={16} /> Upload Official Notice / PDF
+          <Upload size={16} /> Upload Notice / PDF
         </button>
       </div>
 
@@ -128,13 +137,13 @@ export default function Notices() {
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`btn-secondary ${selectedCategory === cat ? 'btn-active' : ''}`}
+            className="btn-secondary"
             style={{
               padding: '8px 16px',
               fontSize: '13px',
-              backgroundColor: selectedCategory === cat ? '#DBEAFE' : '#FFFFFF',
-              color: selectedCategory === cat ? '#163A63' : '#64748B',
-              borderColor: selectedCategory === cat ? '#2563EB' : '#DCE5F0',
+              backgroundColor: selectedCategory === cat ? 'var(--primary-subtle)' : '#FFFFFF',
+              color: selectedCategory === cat ? 'var(--primary)' : 'var(--text-secondary)',
+              borderColor: selectedCategory === cat ? 'var(--primary)' : 'var(--border-color)',
               fontWeight: selectedCategory === cat ? '600' : '400'
             }}
           >
@@ -150,12 +159,21 @@ export default function Notices() {
         gap: '20px'
       }}>
         {loading ? (
-          <div style={{ padding: '40px', gridColumn: '1 / -1', textAlign: 'center', color: '#64748B' }}>
+          <div style={{ padding: '40px', gridColumn: '1 / -1', textAlign: 'center', color: 'var(--text-secondary)' }}>
             Loading notices...
           </div>
         ) : notices.length === 0 ? (
-          <div className="campus-card" style={{ padding: '40px', gridColumn: '1 / -1', textAlign: 'center', color: '#64748B' }}>
-            No notices found in this category.
+          <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
+            <Bell className="empty-state-icon" />
+            <div className="empty-state-title">
+              No Notices Found
+            </div>
+            <div className="empty-state-desc">
+              No circulars are currently available in this category. You can upload an official circular PDF to extract key milestones.
+            </div>
+            <button className="btn-primary" style={{ marginTop: '14px' }} onClick={() => setShowUploadModal(true)}>
+              <Upload size={14} /> Upload First Circular
+            </button>
           </div>
         ) : (
           notices.map((notice) => (
@@ -173,21 +191,26 @@ export default function Notices() {
               <div>
                 {/* Meta Row */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <span className="badge badge-blue">
-                    {notice.category}
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748B' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="badge badge-burgundy">
+                      {notice.category}
+                    </span>
+                    {notice.is_sample && (
+                      <span className="badge badge-demo">Demo</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                     <Calendar size={13} /> {notice.date}
                   </div>
                 </div>
 
                 {/* Title */}
-                <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#163A63', marginBottom: '8px', lineHeight: 1.4 }}>
+                <h4 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--primary-dark)', marginBottom: '8px', lineHeight: 1.4 }}>
                   {notice.title}
                 </h4>
 
                 {/* AI Executive Summary Snippet */}
-                <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5, marginBottom: '16px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '16px' }}>
                   {notice.summary ? (
                     notice.summary.length > 150 ? notice.summary.substring(0, 150) + "..." : notice.summary
                   ) : (
@@ -202,15 +225,21 @@ export default function Notices() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 paddingTop: '12px',
-                borderTop: '1px solid #DCE5F0',
+                borderTop: '1px solid var(--border-color)',
                 marginTop: '12px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#166534', fontWeight: '600' }}>
-                  <ShieldCheck size={14} color="#166534" /> Verified Circular
-                </div>
+                {notice.is_verified ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#166534', fontWeight: '600' }}>
+                    <ShieldCheck size={14} color="#166534" /> Verified Circular
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#92400E', fontWeight: '600' }}>
+                    <AlertTriangle size={14} color="#B45309" /> User Uploaded
+                  </div>
+                )}
 
                 <button
-                  className="btn-tertiary"
+                  className="btn-secondary"
                   style={{ padding: '4px 8px', fontSize: '12px' }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -232,17 +261,39 @@ export default function Notices() {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <span className="badge badge-blue">{selectedNotice.category}</span>
-                  <span style={{ fontSize: '12px', color: '#64748B' }}>Issued by {selectedNotice.source} &bull; {selectedNotice.date}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                  <span className="badge badge-burgundy">{selectedNotice.category}</span>
+                  {selectedNotice.is_sample && <span className="badge badge-demo">Demo Circular</span>}
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Issued by {selectedNotice.source} &bull; {selectedNotice.date}</span>
+                  {selectedNotice.is_verified ? (
+                    <span style={{ fontSize: '11px', color: '#166534', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '4px', fontWeight: '600' }}>
+                      ✓ {selectedNotice.verification_notes || "Verified Official Publication"}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: '11px', color: '#92400E', backgroundColor: '#FEF3C7', padding: '2px 8px', borderRadius: '4px', fontWeight: '600' }}>
+                      ⚠️ {selectedNotice.verification_notes || "User Uploaded (Unverified)"}
+                    </span>
+                  )}
                 </div>
-                <h3 style={{ fontSize: '19px', fontWeight: '700', color: '#163A63', lineHeight: 1.3 }}>
+                <h3 style={{ fontSize: '19px', fontWeight: '700', color: 'var(--primary-dark)', lineHeight: 1.3, marginBottom: '6px' }}>
                   {selectedNotice.title}
                 </h3>
+                {selectedNotice.source_url && (
+                  <div style={{ fontSize: '12px' }}>
+                    <a 
+                      href={selectedNotice.source_url} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      style={{ color: 'var(--primary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}
+                    >
+                      Official College Circular Reference <ExternalLink size={12} />
+                    </a>
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => setSelectedNotice(null)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748B' }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
               >
                 <X size={20} />
               </button>
@@ -250,29 +301,29 @@ export default function Notices() {
 
             {/* AI Summary Box */}
             <div style={{
-              backgroundColor: '#EFF6FF',
-              border: '1px solid #DBEAFE',
+              backgroundColor: 'var(--primary-subtle)',
+              border: '1px solid #F8D7DA',
               borderRadius: '10px',
               padding: '16px',
               marginBottom: '20px'
             }}>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#1E40AF', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                 <Sparkles size={16} /> CampusMate AI Executive Summary
               </div>
-              <p style={{ fontSize: '13px', color: '#172B4D', margin: 0, lineHeight: 1.6 }}>
-                {selectedNotice.summary || "Summary automatically generated by agentic parser."}
+              <p style={{ fontSize: '13px', color: 'var(--text-primary)', margin: 0, lineHeight: 1.6 }}>
+                {selectedNotice.summary || "Summary automatically generated by database circular parser."}
               </p>
             </div>
 
             {/* Key Dates Section */}
             {selectedNotice.important_dates && selectedNotice.important_dates.length > 0 && (
               <div style={{ marginBottom: '20px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#163A63', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                  <Calendar size={15} color="#2563EB" /> Key Deadlines & Dates
+                <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary-dark)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                  <Calendar size={15} color="var(--primary)" /> Key Deadlines & Dates
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {selectedNotice.important_dates.map((d, i) => (
-                    <div key={i} style={{ fontSize: '13px', padding: '6px 10px', backgroundColor: '#FFF1CC', borderRadius: '6px', color: '#854D0E', fontWeight: '500' }}>
+                    <div key={i} style={{ fontSize: '13px', padding: '6px 10px', backgroundColor: '#FEF3C7', borderRadius: '6px', color: '#92400E', fontWeight: '500' }}>
                       🗓️ {d}
                     </div>
                   ))}
@@ -283,12 +334,12 @@ export default function Notices() {
             {/* Action Items for Students */}
             {selectedNotice.action_items && selectedNotice.action_items.length > 0 && (
               <div style={{ marginBottom: '20px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#163A63', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary-dark)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                   <CheckCircle2 size={15} color="#166534" /> Required Action Items
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {selectedNotice.action_items.map((action, i) => (
-                    <div key={i} style={{ fontSize: '13px', padding: '6px 10px', backgroundColor: '#DDF5E5', borderRadius: '6px', color: '#166534' }}>
+                    <div key={i} style={{ fontSize: '13px', padding: '6px 10px', backgroundColor: '#DCFCE7', borderRadius: '6px', color: '#166534' }}>
                       ✓ {action}
                     </div>
                   ))}
@@ -298,14 +349,14 @@ export default function Notices() {
 
             {/* Full Official Content */}
             <div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#163A63', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <FileText size={15} color="#64748B" /> Full Official Notice Text
+              <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary-dark)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                <FileText size={15} color="var(--text-secondary)" /> Full Circular Text
               </div>
               <div style={{
                 fontSize: '13px',
-                color: '#172B4D',
-                backgroundColor: '#F5F8FC',
-                border: '1px solid #DCE5F0',
+                color: 'var(--text-primary)',
+                backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-color)',
                 borderRadius: '8px',
                 padding: '12px 16px',
                 maxHeight: '180px',
@@ -323,13 +374,31 @@ export default function Notices() {
       {showUploadModal && (
         <div className="modal-overlay" onClick={() => setShowUploadModal(false)}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#163A63', marginBottom: '16px' }}>
-              Upload Official Notice or Circular
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary-dark)', marginBottom: '8px' }}>
+              Upload Notice or Circular
             </h3>
+
+            <div style={{
+              padding: '10px 12px',
+              backgroundColor: '#FEF3C7',
+              border: '1px solid #FDE68A',
+              borderRadius: '6px',
+              fontSize: '12px',
+              color: '#92400E',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '8px',
+              marginBottom: '14px'
+            }}>
+              <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <span>
+                <strong>Verification Notice:</strong> Uploaded circulars and extracted dates are imported with an <em>"Unverified"</em> label. Verified status is reserved exclusively for authenticated publications from <code>cce.edu.in</code>.
+              </span>
+            </div>
 
             <form onSubmit={handleUploadSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                   Notice Title *
                 </label>
                 <input
@@ -344,7 +413,7 @@ export default function Notices() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                     Category
                   </label>
                   <select
@@ -352,6 +421,7 @@ export default function Notices() {
                     onChange={(e) => setUploadCategory(e.target.value)}
                     className="form-select"
                   >
+                    <option value="Examination">Examination</option>
                     <option value="Academic">Academic</option>
                     <option value="Administrative">Administrative</option>
                     <option value="Placement">Placement</option>
@@ -361,7 +431,7 @@ export default function Notices() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                     Issuing Authority
                   </label>
                   <input
@@ -375,7 +445,7 @@ export default function Notices() {
               </div>
 
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                   Upload PDF File (Optional)
                 </label>
                 <input
@@ -388,7 +458,7 @@ export default function Notices() {
               </div>
 
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: '#163A63', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                   Or Paste Notice Text Directly
                 </label>
                 <textarea

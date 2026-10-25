@@ -9,34 +9,105 @@ import {
   Tag, 
   ExternalLink,
   Sparkles,
-  Ticket
+  Ticket,
+  RefreshCw,
+  ShieldCheck,
+  AlertTriangle,
+  Building,
+  Info,
+  Globe
 } from 'lucide-react';
 
 export default function ClubsEvents() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [activeTab, setActiveTab] = useState('events'); // 'events' | 'clubs'
+  const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'past' | 'clubs'
+  const [syncing, setSyncing] = useState(false);
+  const [syncData, setSyncData] = useState({
+    last_synced_at: '',
+    status: '',
+    total_events: 0,
+    upcoming_events: 0,
+    past_events: 0
+  });
+  const [syncFeedback, setSyncFeedback] = useState(null);
+
+  const fetchSyncStatus = async () => {
+    try {
+      const res = await fetch('/api/sync/status');
+      if (res.ok) {
+        const data = await res.json();
+        setSyncData(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch sync status:", err);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const url = selectedCategory === 'All' ? '/api/events' : `/api/events?category=${encodeURIComponent(selectedCategory)}`;
+      let statusParam = 'all';
+      if (activeTab === 'upcoming') statusParam = 'upcoming';
+      else if (activeTab === 'past') statusParam = 'past';
+
+      let url = `/api/events?status=${statusParam}`;
+      if (selectedCategory !== 'All') {
+        url += `&category=${encodeURIComponent(selectedCategory)}`;
+      }
+
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setEvents(data);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch events:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchEvents();
-  }, [selectedCategory]);
+    fetchSyncStatus();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'clubs') {
+      fetchEvents();
+    }
+  }, [selectedCategory, activeTab]);
+
+  const handleManualSync = async () => {
+    try {
+      setSyncing(true);
+      setSyncFeedback(null);
+      const res = await fetch('/api/sync/cce', { method: 'POST' });
+      if (res.ok) {
+        const result = await res.json();
+        setSyncFeedback({
+          type: 'success',
+          message: `Synchronized with Christ College of Engineering. ${result.total_events} verified events loaded.`
+        });
+        await fetchSyncStatus();
+        await fetchEvents();
+      } else {
+        setSyncFeedback({
+          type: 'error',
+          message: 'Unable to synchronize with CCE portal right now. Retaining verified snapshot.'
+        });
+      }
+    } catch (err) {
+      setSyncFeedback({
+        type: 'error',
+        message: 'Network request error during synchronization.'
+      });
+    } finally {
+      setSyncing(false);
+      setTimeout(() => setSyncFeedback(null), 6000);
+    }
+  };
 
   const handleToggleRegister = async (eventId) => {
     try {
@@ -49,111 +120,239 @@ export default function ClubsEvents() {
     }
   };
 
-  const categories = ['All', 'Technical', 'Cultural', 'Sports', 'Entrepreneurship'];
+  const categories = ['All', 'Technical', 'Cultural', 'Entrepreneurship', 'Social', 'Academic'];
 
+  // Official student organizations at Christ College of Engineering (Autonomous), Irinjalakuda
   const clubsDirectory = [
     {
-      name: "ACM Student Chapter",
+      name: "IEEE Student Branch CCE (IEEE SB CCE)",
       category: "Technical",
-      lead: "President: Maya Patel (CS '25)",
-      meets: "Every Wednesday 6 PM @ CS Lab 2",
-      description: "Fosters competitive programming, hackathons, and systems engineering. Hosts the flagship annual HackCampus."
+      officialSource: "https://cce.edu.in/student_services/ieee",
+      lead: "Branch Counselor: Prof. Sunil Paul | IEEE Kochi Subsection",
+      meets: "Wednesdays & Saturdays @ IEEE Student Center / Seminar Hall",
+      description: "Flagship international student branch representing IEEE Computer Society and IEEE Power & Energy Society (PES). Organizes IEEE Buildathon, UNFOLD startup bootcamps, and IEEE Smart Village projects."
     },
     {
-      name: "Google Developer Student Club (GDSC)",
+      name: "Computer Society of India (CSI Student Chapter)",
       category: "Technical",
-      lead: "Lead: Rohan Sharma (IT '26)",
-      meets: "Alternate Fridays 5 PM @ Innovation Hub",
-      description: "Explores Generative AI, cloud architectures, and open-source software with Google developer resources."
+      officialSource: "https://cce.edu.in/student_services/clubs/index",
+      lead: "Faculty Advisor: Dept of Computer Science & Engineering",
+      meets: "Thursdays 4:30 PM @ CSE Software Labs",
+      description: "Promotes competitive programming, full-stack Webathons, cloud technologies, open-source development, and systems engineering for computing students."
     },
     {
-      name: "E-Cell (Entrepreneurship Cell)",
+      name: "American Society of Civil Engineers (ASCE CCE)",
+      category: "Technical",
+      officialSource: "https://cce.edu.in/student_services/clubs/index",
+      lead: "Faculty In-Charge: Dept of Civil Engineering",
+      meets: "Tuesdays 4:30 PM @ Civil Seminar Hall",
+      description: "Student chapter hosting structural design hackathons, CAD Hack 2026, Total Station surveying masterclasses, and alumni career roadmaps in infrastructure."
+    },
+    {
+      name: "Innovation & Entrepreneurship Development Centre (IEDC)",
       category: "Entrepreneurship",
-      lead: "President: Ananya Deshmukh (ECE '25)",
-      meets: "Tuesdays 6:30 PM @ Incubation Center",
-      description: "Empowers student founders through pitch competitions, seed grant mentoring, and fireside talks with venture capitalists."
+      officialSource: "https://cce.edu.in/student_services/iedc",
+      lead: "Nodal Officer: CCE Startup Cell & KSUM Incubation",
+      meets: "Alternate Fridays @ Incubation Center",
+      description: "Kerala Startup Mission (KSUM) affiliated center fostering intellectual property, patent filing, student ventures, and government seed grant applications."
     },
     {
-      name: "Cultural & Music Society",
+      name: "National Service Scheme (NSS Unit CCE)",
+      category: "Social",
+      officialSource: "https://cce.edu.in/student_services/nss",
+      lead: "Program Officer: Prof. Davis & CCE NSS Cell",
+      meets: "Weekends @ Campus Quad & Community Outreach Sites",
+      description: "Community welfare, Punarjani medical equipment restoration drives, annual 7-day special camps, and environmental sustainability initiatives."
+    },
+    {
+      name: "Fine Arts & Cultural Club (CCE Dhyuti)",
       category: "Cultural",
-      lead: "Secretary: Liam O'Connor (BioEng '26)",
-      meets: "Thursdays 5:30 PM @ Amphitheatre",
-      description: "The creative pulse of the campus featuring acoustic jam sessions, theatrical productions, and annual cultural fest."
-    },
-    {
-      name: "University Sports Council",
-      category: "Sports",
-      lead: "Sports Sec: Marcus Vance (ME '25)",
-      meets: "Daily 6 AM - 8 AM & 4 PM - 7 PM @ Sports Complex",
-      description: "Coordinates inter-collegiate championships, football tournaments, badminton leagues, and athletics training."
+      officialSource: "https://cce.edu.in/student_services/clubs/index",
+      lead: "Cultural Coordinators & Student Senate",
+      meets: "Fridays 4:30 PM @ College Auditorium",
+      description: "Hosts Christ College annual inter-collegiate arts fest Dhyuti, classical music ensembles, drama productions, choreography, and literary workshops."
     }
   ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#163A63' }}>
-            Campus Clubs & Life
-          </h2>
-          <p style={{ color: '#64748B', fontSize: '14px', marginTop: '4px' }}>
-            Discover student organizations, hackathons, tech talks, and RSVP to add them to your schedule.
-          </p>
+      {/* Official CCE College Header Banner */}
+      <div 
+        className="campus-card" 
+        style={{ 
+          padding: '20px 24px', 
+          backgroundColor: '#FFFFFF',
+          borderLeft: '4px solid var(--primary)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span className="badge badge-burgundy" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', textTransform: 'uppercase' }}>
+                <Building size={12} /> Christ College of Engineering (Autonomous)
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                Irinjalakuda, Kerala
+              </span>
+            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--primary-dark)', margin: 0 }}>
+              Campus Events & Student Activities
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px', marginBottom: 0 }}>
+              Official events, workshops, hackathons, and student branch activities synchronized from the college database.
+            </p>
+          </div>
+
+          {/* Sync Button & Status */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+            <button
+              onClick={handleManualSync}
+              disabled={syncing}
+              className="btn-primary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                fontSize: '13px',
+                cursor: syncing ? 'not-allowed' : 'pointer'
+              }}
+            >
+              <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+              {syncing ? 'Synchronizing with CCE...' : 'Sync with CCE Portal'}
+            </button>
+
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'right' }}>
+              <span>Database status: </span>
+              <strong style={{ color: 'var(--primary-dark)' }}>
+                {syncData.last_synced_at || 'Connected'}
+              </strong>
+            </div>
+          </div>
         </div>
 
-        {/* View Toggle */}
-        <div style={{ display: 'flex', backgroundColor: '#EAF1FA', padding: '4px', borderRadius: '8px' }}>
-          <button
-            onClick={() => setActiveTab('events')}
+        {/* Sync Feedback Message */}
+        {syncFeedback && (
+          <div 
             style={{
-              padding: '6px 16px',
-              borderRadius: '6px',
-              border: 'none',
+              padding: '10px 14px',
+              borderRadius: '8px',
               fontSize: '13px',
-              fontWeight: activeTab === 'events' ? '600' : '400',
-              backgroundColor: activeTab === 'events' ? '#FFFFFF' : 'transparent',
-              color: activeTab === 'events' ? '#163A63' : '#64748B',
-              boxShadow: activeTab === 'events' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              cursor: 'pointer'
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              backgroundColor: syncFeedback.type === 'success' ? '#DCFCE7' : '#FEF3C7',
+              color: syncFeedback.type === 'success' ? '#166534' : '#92400E',
+              border: `1px solid ${syncFeedback.type === 'success' ? '#BBF7D0' : '#FDE68A'}`
             }}
           >
-            Upcoming Events
-          </button>
-          <button
-            onClick={() => setActiveTab('clubs')}
-            style={{
-              padding: '6px 16px',
-              borderRadius: '6px',
-              border: 'none',
-              fontSize: '13px',
-              fontWeight: activeTab === 'clubs' ? '600' : '400',
-              backgroundColor: activeTab === 'clubs' ? '#FFFFFF' : 'transparent',
-              color: activeTab === 'clubs' ? '#163A63' : '#64748B',
-              boxShadow: activeTab === 'clubs' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              cursor: 'pointer'
-            }}
-          >
-            Clubs Directory
-          </button>
+            {syncFeedback.type === 'success' ? <ShieldCheck size={16} /> : <AlertTriangle size={16} />}
+            <span>{syncFeedback.message}</span>
+          </div>
+        )}
+
+        {/* Official Sources Citation Bar */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', paddingTop: '10px', borderTop: '1px solid var(--border-color)', fontSize: '12px', color: 'var(--text-secondary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Globe size={13} color="var(--primary)" />
+            <span>Official Portal: </span>
+            <a 
+              href="https://cce.edu.in/" 
+              target="_blank" 
+              rel="noreferrer" 
+              style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+            >
+              cce.edu.in <ExternalLink size={11} />
+            </a>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Globe size={13} color="var(--primary)" />
+            <span>IEEE Student Branch: </span>
+            <a 
+              href="https://cce.edu.in/student_services/ieee" 
+              target="_blank" 
+              rel="noreferrer" 
+              style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+            >
+              cce.edu.in/student_services/ieee <ExternalLink size={11} />
+            </a>
+          </div>
         </div>
       </div>
 
-      {activeTab === 'events' ? (
-        <>
-          {/* Category Tabs */}
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+      {/* Navigation Tabs (Upcoming vs Past vs Clubs) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', backgroundColor: 'var(--bg-subtle)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+          <button
+            onClick={() => setActiveTab('upcoming')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '6px',
+              border: 'none',
+              fontSize: '13px',
+              fontWeight: activeTab === 'upcoming' ? '600' : '500',
+              backgroundColor: activeTab === 'upcoming' ? '#FFFFFF' : 'transparent',
+              color: activeTab === 'upcoming' ? 'var(--primary-dark)' : 'var(--text-secondary)',
+              boxShadow: activeTab === 'upcoming' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              cursor: 'pointer'
+            }}
+          >
+            Upcoming Events ({syncData.upcoming_events || events.filter(e => e.is_upcoming).length || '0'})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('past')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '6px',
+              border: 'none',
+              fontSize: '13px',
+              fontWeight: activeTab === 'past' ? '600' : '500',
+              backgroundColor: activeTab === 'past' ? '#FFFFFF' : 'transparent',
+              color: activeTab === 'past' ? 'var(--primary-dark)' : 'var(--text-secondary)',
+              boxShadow: activeTab === 'past' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              cursor: 'pointer'
+            }}
+          >
+            Past Events & Highlights
+          </button>
+
+          <button
+            onClick={() => setActiveTab('clubs')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '6px',
+              border: 'none',
+              fontSize: '13px',
+              fontWeight: activeTab === 'clubs' ? '600' : '500',
+              backgroundColor: activeTab === 'clubs' ? '#FFFFFF' : 'transparent',
+              color: activeTab === 'clubs' ? 'var(--primary-dark)' : 'var(--text-secondary)',
+              boxShadow: activeTab === 'clubs' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              cursor: 'pointer'
+            }}
+          >
+            Official Clubs Directory
+          </button>
+        </div>
+
+        {/* Category Filters (when viewing events) */}
+        {activeTab !== 'clubs' && (
+          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`btn-secondary ${selectedCategory === cat ? 'btn-active' : ''}`}
+                className="btn-secondary"
                 style={{
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  backgroundColor: selectedCategory === cat ? '#DBEAFE' : '#FFFFFF',
-                  color: selectedCategory === cat ? '#163A63' : '#64748B',
-                  borderColor: selectedCategory === cat ? '#2563EB' : '#DCE5F0',
+                  padding: '6px 14px',
+                  fontSize: '12px',
+                  backgroundColor: selectedCategory === cat ? 'var(--primary-subtle)' : '#FFFFFF',
+                  color: selectedCategory === cat ? 'var(--primary)' : 'var(--text-secondary)',
+                  borderColor: selectedCategory === cat ? 'var(--primary)' : 'var(--border-color)',
                   fontWeight: selectedCategory === cat ? '600' : '400'
                 }}
               >
@@ -161,127 +360,279 @@ export default function ClubsEvents() {
               </button>
             ))}
           </div>
+        )}
+      </div>
 
-          {/* Events Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-            gap: '20px'
-          }}>
-            {loading ? (
-              <div style={{ padding: '40px', gridColumn: '1 / -1', textAlign: 'center', color: '#64748B' }}>
-                Loading events...
+      {/* Main Content Area */}
+      {activeTab !== 'clubs' ? (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+          gap: '20px'
+        }}>
+          {loading ? (
+            <div style={{ padding: '40px', gridColumn: '1 / -1', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 12px auto', color: 'var(--primary)' }} />
+              Loading verified events from Christ College of Engineering...
+            </div>
+          ) : events.length === 0 ? (
+            <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
+              <Calendar className="empty-state-icon" />
+              <div className="empty-state-title">
+                {activeTab === 'upcoming' ? 'No Upcoming Events Scheduled' : 'No Events Found'}
               </div>
-            ) : events.length === 0 ? (
-              <div className="campus-card" style={{ padding: '40px', gridColumn: '1 / -1', textAlign: 'center', color: '#64748B' }}>
-                No events found for this category.
+              <div className="empty-state-desc">
+                {activeTab === 'upcoming' 
+                  ? 'There are currently no upcoming events matching this filter. Check past highlights or sync with the CCE portal.'
+                  : 'No past event archives match your current category selection.'}
               </div>
-            ) : (
-              events.map((event) => (
+              <button className="btn-primary" style={{ marginTop: '14px' }} onClick={handleManualSync}>
+                <RefreshCw size={14} /> Refresh College Events
+              </button>
+            </div>
+          ) : (
+            events.map((event) => {
+              const isPast = !event.is_upcoming;
+              return (
                 <div
                   key={event.id}
                   className="campus-card"
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    opacity: isPast ? 0.92 : 1,
+                    position: 'relative'
                   }}
                 >
                   <div>
-                    {/* Club Header & Tag */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        {event.club_name}
-                      </span>
-                      <span className="badge badge-blue">
-                        {event.category}
-                      </span>
+                    {/* Top Row: Club & Status Badges */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', gap: '8px' }}>
+                      <div>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          {event.organizer || event.club_name}
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                          <span className="badge badge-grey" style={{ fontSize: '10px' }}>
+                            {event.category}
+                          </span>
+                          {event.is_sample && (
+                            <span className="badge badge-demo">Demo</span>
+                          )}
+                          {event.is_upcoming ? (
+                            <span className="badge badge-burgundy" style={{ fontSize: '10px' }}>
+                              Upcoming
+                            </span>
+                          ) : (
+                            <span className="badge badge-grey" style={{ fontSize: '10px' }}>
+                              Past Event
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Verification Status Badge */}
+                      {event.is_verified ? (
+                        <span 
+                          title="Verified from cce.edu.in official college publication"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            backgroundColor: '#DCFCE7',
+                            color: '#166534',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            padding: '3px 8px',
+                            borderRadius: '6px'
+                          }}
+                        >
+                          <ShieldCheck size={12} /> Verified Source
+                        </span>
+                      ) : (
+                        <span 
+                          title="Unverified community submission or pending review"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            backgroundColor: '#FEF3C7',
+                            color: '#92400E',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            padding: '3px 8px',
+                            borderRadius: '6px'
+                          }}
+                        >
+                          <AlertTriangle size={12} /> Pending Review
+                        </span>
+                      )}
                     </div>
 
                     {/* Event Title */}
-                    <h4 style={{ fontSize: '17px', fontWeight: '700', color: '#163A63', marginBottom: '10px', lineHeight: 1.3 }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--primary-dark)', marginBottom: '10px', lineHeight: 1.35 }}>
                       {event.title}
                     </h4>
 
-                    {/* Logistics */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: '#64748B', marginBottom: '14px' }}>
+                    {/* Logistics Details */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Calendar size={14} color="#2563EB" /> <strong>{event.date}</strong> &bull; {event.time}
+                        <Calendar size={13} color="var(--primary)" /> 
+                        <strong style={{ color: 'var(--text-primary)' }}>{event.date}</strong> &bull; {event.time || "Schedule Announced by Organizer"}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <MapPin size={14} color="#64748B" /> {event.location}
+                        <MapPin size={13} color="var(--text-secondary)" /> 
+                        <span>{event.venue || event.location || "Christ College of Engineering, Irinjalakuda"}</span>
                       </div>
+                      {event.registration_deadline && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#991B1B', fontWeight: '500' }}>
+                          <Clock size={13} color="#991B1B" /> 
+                          <span>Registration Deadline: <strong>{event.registration_deadline}</strong></span>
+                        </div>
+                      )}
                     </div>
 
-                    <p style={{ fontSize: '13px', color: '#172B4D', lineHeight: 1.5, marginBottom: '16px' }}>
+                    {/* Description */}
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '14px' }}>
                       {event.description}
                     </p>
                   </div>
 
-                  {/* RSVP / Add to Schedule Action */}
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    paddingTop: '14px',
-                    borderTop: '1px solid #DCE5F0'
-                  }}>
-                    <span style={{ fontSize: '11px', color: '#64748B' }}>
-                      {event.is_registered ? "✓ Added to your Today's Schedule" : "Free Student Entry"}
-                    </span>
-
-                    <button
-                      onClick={() => handleToggleRegister(event.id)}
-                      className={event.is_registered ? "btn-secondary" : "btn-primary"}
-                      style={{
-                        padding: '8px 14px',
-                        fontSize: '12px',
-                        backgroundColor: event.is_registered ? '#DDF5E5' : '#2563EB',
-                        color: event.is_registered ? '#166534' : '#FFFFFF',
-                        borderColor: event.is_registered ? '#bbf7d0' : 'transparent'
-                      }}
-                    >
-                      {event.is_registered ? (
-                        <>
-                          <Check size={14} /> RSVP Confirmed
-                        </>
+                  <div>
+                    {/* Official Source Attribution Link */}
+                    <div style={{ 
+                      padding: '8px 10px', 
+                      backgroundColor: 'var(--bg-subtle)', 
+                      borderRadius: '6px', 
+                      fontSize: '11px', 
+                      color: 'var(--text-secondary)',
+                      marginBottom: '12px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <span>Source: <strong>{event.source_name || "cce.edu.in"}</strong></span>
+                      {event.source_url ? (
+                        <a 
+                          href={event.source_url} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          style={{ color: 'var(--primary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px', fontWeight: '600' }}
+                        >
+                          View Official Link <ExternalLink size={10} />
+                        </a>
                       ) : (
-                        <>
-                          <Ticket size={14} /> RSVP & Add to Schedule
-                        </>
+                        <span style={{ color: 'var(--text-secondary)' }}>Internal Notice</span>
                       )}
-                    </button>
+                    </div>
+
+                    {/* RSVP / Registration Actions */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      paddingTop: '12px',
+                      borderTop: '1px solid var(--border-color)'
+                    }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        {event.is_registered 
+                          ? "✓ Scheduled on your Student Calendar" 
+                          : (event.registration_link ? "Official Link Available" : "CCE Student Entry")}
+                      </span>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {event.registration_link && (
+                          <a
+                            href={event.registration_link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn-secondary"
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: '12px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              textDecoration: 'none'
+                            }}
+                          >
+                            <ExternalLink size={12} /> Register Link
+                          </a>
+                        )}
+
+                        <button
+                          onClick={() => handleToggleRegister(event.id)}
+                          className={event.is_registered ? "btn-secondary" : "btn-primary"}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            backgroundColor: event.is_registered ? '#DCFCE7' : 'var(--primary)',
+                            color: event.is_registered ? '#166534' : '#FFFFFF',
+                            borderColor: event.is_registered ? '#BBF7D0' : 'transparent',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {event.is_registered ? (
+                            <>
+                              <Check size={13} /> RSVP Confirmed
+                            </>
+                          ) : (
+                            <>
+                              <Ticket size={13} /> RSVP to Schedule
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        </>
+              );
+            })
+          )}
+        </div>
       ) : (
-        /* Clubs Directory Tab */
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
+        /* Official Clubs Directory Tab */
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px' }}>
           {clubsDirectory.map((club, idx) => (
-            <div key={idx} className="campus-card" style={{ padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span className="badge badge-blue">{club.category}</span>
-                <span style={{ fontSize: '12px', color: '#64748B' }}>Active Chapter</span>
+            <div key={idx} className="campus-card" style={{ padding: '22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <span className="badge badge-burgundy">{club.category}</span>
+                  <span style={{ fontSize: '11px', color: '#166534', fontWeight: '600', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '4px' }}>
+                    Active Official Body
+                  </span>
+                </div>
+
+                <h4 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--primary-dark)', marginBottom: '8px' }}>
+                  {club.name}
+                </h4>
+
+                <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: '600', marginBottom: '4px' }}>
+                  {club.lead}
+                </div>
+
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                  🗓️ {club.meets}
+                </div>
+
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '16px' }}>
+                  {club.description}
+                </p>
               </div>
 
-              <h4 style={{ fontSize: '18px', fontWeight: '700', color: '#163A63', marginBottom: '8px' }}>
-                {club.name}
-              </h4>
-
-              <div style={{ fontSize: '12px', color: '#2563EB', fontWeight: '600', marginBottom: '4px' }}>
-                {club.lead}
+              <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Official Publication:</span>
+                <a
+                  href={club.officialSource}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: '12px', color: 'var(--primary)', textDecoration: 'none', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                >
+                  Visit Club Page <ExternalLink size={12} />
+                </a>
               </div>
-
-              <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '12px' }}>
-                🗓️ {club.meets}
-              </div>
-
-              <p style={{ fontSize: '13px', color: '#172B4D', lineHeight: 1.5 }}>
-                {club.description}
-              </p>
             </div>
           ))}
         </div>

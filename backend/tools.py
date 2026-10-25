@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime, date, timedelta
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
@@ -72,7 +73,8 @@ def tool_list_tasks(
             "priority": t.priority,
             "category": t.category,
             "status": t.status,
-            "estimated_hours": t.estimated_hours
+            "estimated_hours": t.estimated_hours,
+            "is_sample": getattr(t, "is_sample", False)
         }
         for t in tasks
     ]
@@ -194,8 +196,17 @@ def tool_search_documents(db: Session, query: str) -> Dict[str, Any]:
     docs = db.query(CampusDocument).all()
     matched = []
     q_lower = query.lower()
-    keywords = [k for k in q_lower.split() if len(k) > 2]
-    
+    STOPWORDS = {
+        "what", "when", "where", "which", "who", "whom", "whose", "why", "how",
+        "the", "and", "for", "with", "about", "from", "into", "over", "after",
+        "is", "are", "was", "were", "be", "been", "being", "have", "has", "had",
+        "do", "does", "did", "can", "could", "will", "would", "shall", "should",
+        "this", "that", "these", "those", "you", "your", "mine", "ours", "their",
+        "tell", "give", "show", "know", "please", "want", "like"
+    }
+    keywords = [re.sub(r'[^a-z0-9]', '', k) for k in q_lower.split()]
+    keywords = [k for k in keywords if len(k) > 2 and k not in STOPWORDS]
+
     for doc in docs:
         score = 0
         content_lower = doc.content.lower()
@@ -270,28 +281,53 @@ def tool_summarize_notice(db: Session, notice_id: Optional[int] = None, query: O
         "important_dates": important_dates
     }
 
-def tool_get_upcoming_events(db: Session, category: Optional[str] = None) -> Dict[str, Any]:
-    """Fetches upcoming campus club meetings, workshops, hackathons, and social events."""
+def tool_get_upcoming_events(
+    db: Session, 
+    category: Optional[str] = None,
+    status: Optional[str] = "upcoming"
+) -> Dict[str, Any]:
+    """Fetches verified campus club meetings, workshops, hackathons, and activities from Christ College of Engineering (Autonomous), Irinjalakuda."""
+    today_str = date.today().strftime("%Y-%m-%d")
     query = db.query(ClubEvent)
-    if category:
+    
+    if category and category.lower() != "all":
         query = query.filter(ClubEvent.category.ilike(f"%{category}%"))
+        
+    if status == "upcoming":
+        query = query.filter(ClubEvent.date >= today_str)
+    elif status == "past":
+        query = query.filter(ClubEvent.date < today_str)
+        
     events = query.order_by(ClubEvent.date.asc()).all()
+
     results = [
         {
             "id": e.id,
             "title": e.title,
             "club_name": e.club_name,
+            "organizer": e.organizer or e.club_name,
             "category": e.category,
             "date": e.date,
             "time": e.time,
             "location": e.location,
+            "venue": e.venue or e.location,
             "description": e.description,
-            "is_registered": e.is_registered
+            "registration_deadline": e.registration_deadline,
+            "registration_link": e.registration_link,
+            "source_url": e.source_url or "https://cce.edu.in/",
+            "source_name": e.source_name or "Christ College of Engineering Official Portal",
+            "is_verified": e.is_verified,
+            "verification_notes": e.verification_notes or "Verified Official Publication",
+            "is_upcoming": (e.date >= today_str),
+            "is_registered": e.is_registered,
+            "is_sample": getattr(e, "is_sample", False)
         }
         for e in events
     ]
     return {
         "count": len(results),
+        "status_filter": status,
+        "official_source": "https://cce.edu.in/",
         "events": results
     }
 

@@ -1,7 +1,9 @@
 import os
+import io
+import csv
 import json
 import re
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timedelta, timezone
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Response
@@ -12,9 +14,17 @@ from database import engine, Base, get_db
 from models import Task, StudyPlan, ScheduleItem, Notice, ClubEvent, CampusDocument, UserSettings, AgentInteraction
 import schemas
 import tools
+import cce_service
 from agent import CampusAgent, get_current_ai_settings
 from rag import extract_text_from_pdf, extract_notice_bulletins, ingest_campus_document
-from seed_data import seed_database
+from seed_data import seed_database, clear_sample_data
+from importers import (
+    parse_tasks_from_csv, 
+    parse_tasks_from_xlsx, 
+    parse_tasks_from_pdf, 
+    parse_schedule_from_csv, 
+    get_sample_csv_template
+)
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
@@ -24,6 +34,7 @@ async def lifespan(app: FastAPI):
     db = next(get_db())
     try:
         seed_database(db)
+        cce_service.sync_cce_data(db)
     finally:
         db.close()
     yield
@@ -48,7 +59,8 @@ app.add_middleware(
 
 @app.get("/api/dashboard", response_model=schemas.DashboardStats)
 def get_dashboard_data(db: Session = Depends(get_db)):
-    today_str = date.today().strftime("%Y-%m-%d")
+    today = date.today()
+    today_str = today.strftime("%Y-%m-%d")
     current_hour = datetime.now().hour
     
     if 5 <= current_hour < 12:
@@ -63,16 +75,65 @@ def get_dashboard_data(db: Session = Depends(get_db)):
     pending_tasks = db.query(Task).filter(Task.status != "Completed").count()
     completed_tasks = db.query(Task).filter(Task.status == "Completed").count()
     upcoming_exams = db.query(Task).filter(Task.category == "Exam", Task.status != "Completed").count()
-    upcoming_events = db.query(ClubEvent).count()
+    # Genuine count of events happening today or in the future:
+    upcoming_events = db.query(ClubEvent).filter(ClubEvent.date >= today_str).count()
 
     recommendation = tools.tool_generate_smart_recommendations(db)
 
     deadlines = db.query(Task).filter(Task.status != "Completed").order_by(Task.due_date.asc()).limit(5).all()
+    # Real schedule for today only:
     today_schedule = db.query(ScheduleItem).filter(ScheduleItem.date == today_str).order_by(ScheduleItem.start_time.asc()).all()
 
-    # If no items for today, fetch next available scheduled items
-    if not today_schedule:
-        today_schedule = db.query(ScheduleItem).order_by(ScheduleItem.date.asc(), ScheduleItem.start_time.asc()).limit(5).all()
+    # Calculate real Weekly Study Velocity (Monday through Sunday of current week)
+    start_of_week = today - timedelta(days=today.weekday())
+    days_abbr = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    active_plans = db.query(StudyPlan).filter(StudyPlan.status == "Active").all()
+    avg_target = round(sum(p.daily_hours for p in active_plans) / len(active_plans), 1) if active_plans else 0.0
+
+    weekly_velocity = []
+    for i in range(7):
+        d = start_of_week + timedelta(days=i)
+        d_str = d.strftime("%Y-%m-%d")
+        
+        # Completed tasks estimated hours
+        comp_tasks = db.query(Task).filter(Task.status == "Completed", Task.due_date == d_str).all()
+        task_hrs = sum(t.estimated_hours or 0.0 for t in comp_tasks)
+        
+        # Completed schedule items
+        sched_items = db.query(ScheduleItem).filter(ScheduleItem.date == d_str, ScheduleItem.is_completed == True).all()
+        sched_hrs = len([s for s in sched_items if s.category in ["Class", "Lab", "Study"]]) * 1.5
+        
+        actual_hrs = round(max(task_hrs, sched_hrs), 1)
+        weekly_velocity.append({
+            "day": days_abbr[i],
+            "date": d_str,
+            "actual": actual_hrs,
+            "target": avg_target
+        })
+
+    # Calculate real Course Workload Distribution for pending/active tasks
+    pending_tasks_list = db.query(Task).filter(Task.status != "Completed").all()
+    course_map: Dict[str, Dict[str, Any]] = {}
+    for t in pending_tasks_list:
+        c = t.course or "General"
+        if c not in course_map:
+            course_map[c] = {"course": c, "hours": 0.0, "count": 0}
+        course_map[c]["hours"] += (t.estimated_hours or 2.0)
+        course_map[c]["count"] += 1
+
+    course_workload = sorted(
+        [{"course": v["course"], "hours": round(v["hours"], 1), "count": v["count"]} for v in course_map.values()],
+        key=lambda x: x["hours"],
+        reverse=True
+    )
+
+    has_sample_data = bool(
+        db.query(Task).filter(Task.is_sample == True).first() or
+        db.query(StudyPlan).filter(StudyPlan.is_sample == True).first() or
+        db.query(ScheduleItem).filter(ScheduleItem.is_sample == True).first()
+    )
+
+    total_tasks = db.query(Task).count()
 
     return schemas.DashboardStats(
         pending_tasks=pending_tasks,
@@ -82,7 +143,11 @@ def get_dashboard_data(db: Session = Depends(get_db)):
         greeting=greeting,
         ai_recommendation=recommendation,
         deadlines=[schemas.TaskResponse.model_validate(t) for t in deadlines],
-        today_schedule=[schemas.ScheduleItemResponse.model_validate(s) for s in today_schedule]
+        today_schedule=[schemas.ScheduleItemResponse.model_validate(s) for s in today_schedule],
+        weekly_velocity=weekly_velocity,
+        course_workload=course_workload,
+        has_sample_data=has_sample_data,
+        total_tasks=total_tasks
     )
 
 # ----------------- TASKS -----------------
@@ -143,6 +208,92 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     db.delete(task)
     db.commit()
     return {"success": True, "message": "Task deleted"}
+
+@app.post("/api/tasks/import-file")
+async def import_tasks_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    contents = await file.read()
+    filename = (file.filename or "").lower()
+    
+    parsed = []
+    if filename.endswith(".xlsx") or filename.endswith(".xls"):
+        parsed = parse_tasks_from_xlsx(contents)
+    elif filename.endswith(".pdf"):
+        parsed = parse_tasks_from_pdf(contents)
+    else:
+        parsed = parse_tasks_from_csv(contents)
+        
+    if not parsed:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not detect or parse any tasks/deadlines from the uploaded file. Please ensure columns include Title and DueDate, or download our sample CSV template."
+        )
+        
+    created_tasks = []
+    for item in parsed:
+        new_task = Task(
+            title=item.get("title", "Imported Task"),
+            course=item.get("course", "General"),
+            due_date=item.get("due_date", date.today().strftime("%Y-%m-%d")),
+            priority=item.get("priority", "Medium"),
+            category=item.get("category", "Assignment"),
+            status="Pending",
+            estimated_hours=item.get("estimated_hours", 2.0),
+            description=item.get("description", f"Imported from {file.filename}"),
+            is_sample=False
+        )
+        db.add(new_task)
+        created_tasks.append(new_task)
+        
+    db.commit()
+    for t in created_tasks:
+        db.refresh(t)
+        
+    return {
+        "success": True,
+        "count": len(created_tasks),
+        "message": f"Successfully imported {len(created_tasks)} tasks from {file.filename} into your planner.",
+        "imported_tasks": [schemas.TaskResponse.model_validate(t) for t in created_tasks]
+    }
+
+@app.post("/api/tasks/batch")
+def create_tasks_batch(payload: schemas.TaskBatchCreate, db: Session = Depends(get_db)):
+    created = []
+    for t_in in payload.tasks:
+        t = Task(**t_in.model_dump())
+        t.is_sample = False
+        db.add(t)
+        created.append(t)
+    db.commit()
+    for t in created:
+        db.refresh(t)
+    return {
+        "success": True,
+        "count": len(created),
+        "tasks": [schemas.TaskResponse.model_validate(t) for t in created]
+    }
+
+@app.get("/api/tasks/sample-template.csv")
+def download_tasks_sample_template():
+    csv_text = get_sample_csv_template()
+    return Response(
+        content=csv_text,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=campusmate_tasks_template.csv"}
+    )
+
+@app.get("/api/tasks/export.csv")
+def export_tasks_csv(db: Session = Depends(get_db)):
+    tasks = db.query(Task).order_by(Task.due_date.asc()).all()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Title", "Course", "DueDate", "Priority", "Category", "Status", "EstimatedHours", "IsSample", "Description"])
+    for t in tasks:
+        writer.writerow([t.title, t.course, t.due_date, t.priority, t.category, t.status, t.estimated_hours, t.is_sample, t.description])
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=campusmate_tasks.csv"}
+    )
 
 # ----------------- STUDY PLANS -----------------
 
@@ -369,6 +520,51 @@ def delete_schedule_item(item_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"success": True}
 
+@app.post("/api/schedule/import-file")
+async def import_schedule_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    contents = await file.read()
+    filename = (file.filename or "").lower()
+    
+    parsed = []
+    if filename.endswith(".xlsx") or filename.endswith(".xls"):
+        parsed = parse_tasks_from_xlsx(contents)
+    elif filename.endswith(".pdf"):
+        parsed = parse_tasks_from_pdf(contents)
+    else:
+        parsed = parse_schedule_from_csv(contents)
+        
+    if not parsed:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not detect or parse schedule items from the uploaded file."
+        )
+        
+    created_items = []
+    for item in parsed:
+        sched = ScheduleItem(
+            title=item.get("title", "Lecture"),
+            start_time=item.get("start_time", "09:00 AM"),
+            end_time=item.get("end_time", "10:30 AM"),
+            category=item.get("category", "Class"),
+            date=item.get("date", date.today().strftime("%Y-%m-%d")),
+            location=item.get("location", "Campus"),
+            is_completed=False,
+            is_sample=False,
+            notes=item.get("notes", f"Imported timetable item from {file.filename}")
+        )
+        db.add(sched)
+        created_items.append(sched)
+        
+    db.commit()
+    for s in created_items:
+        db.refresh(s)
+        
+    return {
+        "success": True,
+        "count": len(created_items),
+        "message": f"Successfully imported {len(created_items)} timetable blocks from {file.filename}."
+    }
+
 # ----------------- NOTICES -----------------
 
 @app.get("/api/notices", response_model=List[schemas.NoticeResponse])
@@ -389,7 +585,9 @@ def get_notices(category: Optional[str] = None, db: Session = Depends(get_db)):
             action_items=json.loads(n.action_items_json) if n.action_items_json else [],
             important_dates=json.loads(n.important_dates_json) if n.important_dates_json else [],
             is_verified=n.is_verified,
+            verification_notes=getattr(n, "verification_notes", "Official CCE Notice") if n.is_verified else "User Uploaded (Unverified)",
             source=n.source,
+            source_url=getattr(n, "source_url", "https://cce.edu.in/"),
             pdf_filename=n.pdf_filename
         ))
     return results
@@ -397,6 +595,12 @@ def get_notices(category: Optional[str] = None, db: Session = Depends(get_db)):
 @app.post("/api/notices", response_model=schemas.NoticeResponse)
 def create_notice(notice_in: schemas.NoticeCreate, db: Session = Depends(get_db)):
     analysis = extract_notice_bulletins(notice_in.content)
+    # Only label as verified if origin is authenticated official college publication
+    is_official = any(k in notice_in.source.lower() for k in ["cce", "christ", "controller", "dean of academic", "autonomous"])
+    is_verified = is_official
+    verification_notes = "Verified CCE Official Circular" if is_verified else "User Submitted Notice (Unverified)"
+    source_url = "https://cce.edu.in/" if is_verified else ""
+
     notice = Notice(
         title=notice_in.title,
         category=notice_in.category,
@@ -405,8 +609,10 @@ def create_notice(notice_in: schemas.NoticeCreate, db: Session = Depends(get_db)
         summary=analysis["summary"],
         action_items_json=json.dumps(analysis["action_items"]),
         important_dates_json=json.dumps(analysis["important_dates"]),
-        is_verified=True,
-        source=notice_in.source
+        is_verified=is_verified,
+        verification_notes=verification_notes,
+        source=notice_in.source,
+        source_url=source_url
     )
     db.add(notice)
     db.commit()
@@ -421,7 +627,9 @@ def create_notice(notice_in: schemas.NoticeCreate, db: Session = Depends(get_db)
         action_items=analysis["action_items"],
         important_dates=analysis["important_dates"],
         is_verified=notice.is_verified,
+        verification_notes=notice.verification_notes,
         source=notice.source,
+        source_url=notice.source_url,
         pdf_filename=notice.pdf_filename
     )
 
@@ -439,6 +647,12 @@ async def upload_notice_pdf(
         extracted_text = f"Notice uploaded: {file.filename}. Content extraction processed."
         
     analysis = extract_notice_bulletins(extracted_text)
+    # Check if uploaded source is certified official
+    is_official = any(k in source.lower() for k in ["cce official", "christ college", "controller of examinations"])
+    is_verified = is_official
+    verification_notes = "Verified CCE Official Document" if is_verified else "User Uploaded Notice (Unverified - Pending Review)"
+    source_url = "https://cce.edu.in/" if is_verified else ""
+
     notice = Notice(
         title=title,
         category=category,
@@ -447,23 +661,86 @@ async def upload_notice_pdf(
         summary=analysis["summary"],
         action_items_json=json.dumps(analysis["action_items"]),
         important_dates_json=json.dumps(analysis["important_dates"]),
-        is_verified=True,
+        is_verified=is_verified,
+        verification_notes=verification_notes,
         source=source,
+        source_url=source_url,
         pdf_filename=file.filename
     )
     db.add(notice)
     db.commit()
     db.refresh(notice)
-    return {"success": True, "notice_id": notice.id, "extracted_dates": analysis["important_dates"]}
+
+    # If key dates were found in the uploaded notice, support auto-creating an unverified event
+    imported_event_id = None
+    if analysis["important_dates"]:
+        first_date_entry = analysis["important_dates"][0]
+        match = re.search(r'\d{4}-\d{2}-\d{2}', first_date_entry)
+        event_date = match.group(0) if match else date.today().strftime("%Y-%m-%d")
+        
+        # Check if already imported
+        existing_event = db.query(ClubEvent).filter(ClubEvent.title == f"Notice Event: {title[:80]}").first()
+        if not existing_event:
+            new_ev = ClubEvent(
+                title=f"Notice Event: {title[:80]}",
+                club_name="Uploaded Notice",
+                category=category if category in ["Technical", "Cultural", "Sports", "Entrepreneurship"] else "Academic",
+                date=event_date,
+                time="TBA",
+                location="Christ College of Engineering, Irinjalakuda",
+                venue="Christ College of Engineering, Irinjalakuda",
+                organizer=source,
+                description=analysis["summary"] or extracted_text[:200],
+                registration_deadline="",
+                registration_link="",
+                source_url="",
+                source_name=f"User Uploaded Notice ({file.filename})",
+                is_verified=False,
+                verification_notes="Unverified Information (Extracted from User Notice)",
+                is_upcoming=(event_date >= date.today().strftime("%Y-%m-%d")),
+                is_registered=False,
+                tags="Notice, Uploaded"
+            )
+            db.add(new_ev)
+            db.commit()
+            imported_event_id = new_ev.id
+
+    return {
+        "success": True, 
+        "notice_id": notice.id, 
+        "is_verified": notice.is_verified,
+        "verification_notes": notice.verification_notes,
+        "extracted_dates": analysis["important_dates"],
+        "imported_event_id": imported_event_id
+    }
 
 # ----------------- CLUBS & EVENTS -----------------
 
 @app.get("/api/events", response_model=List[schemas.ClubEventResponse])
-def get_events(category: Optional[str] = None, db: Session = Depends(get_db)):
+def get_events(
+    category: Optional[str] = None, 
+    status: Optional[str] = "all", # 'upcoming', 'past', 'all'
+    db: Session = Depends(get_db)
+):
+    today_str = date.today().strftime("%Y-%m-%d")
     query = db.query(ClubEvent)
     if category and category != "All":
         query = query.filter(ClubEvent.category == category)
-    return query.order_by(ClubEvent.date.asc()).all()
+    
+    if status == "upcoming":
+        query = query.filter(ClubEvent.date >= today_str)
+        return query.order_by(ClubEvent.date.asc()).all()
+    elif status == "past":
+        query = query.filter(ClubEvent.date < today_str)
+        return query.order_by(ClubEvent.date.desc()).all()
+        
+    # 'all': Upcoming first in ascending order, then Past in descending order
+    all_events = query.all()
+    upcoming = [e for e in all_events if e.date >= today_str]
+    past = [e for e in all_events if e.date < today_str]
+    upcoming.sort(key=lambda x: x.date)
+    past.sort(key=lambda x: x.date, reverse=True)
+    return upcoming + past
 
 @app.post("/api/events/{event_id}/toggle-register")
 def toggle_event_registration(event_id: int, db: Session = Depends(get_db)):
@@ -482,19 +759,54 @@ def toggle_event_registration(event_id: int, db: Session = Depends(get_db)):
         if not existing:
             sched = ScheduleItem(
                 title=f"{event.title} ({event.club_name})",
-                start_time=event.time,
+                start_time=event.time or "09:00 AM",
                 end_time="--",
                 category="Event",
                 date=event.date,
-                location=event.location,
+                location=event.venue or event.location,
                 is_completed=False,
-                notes=f"Registered for club event: {event.description[:100]}"
+                notes=f"Registered for campus event: {event.description[:100]} | Source: {event.source_url}"
             )
             db.add(sched)
     
     db.commit()
     db.refresh(event)
     return {"success": True, "is_registered": event.is_registered}
+
+# ----------------- SYNCHRONIZATION WITH CCE PORTAL -----------------
+
+@app.post("/api/sync/cce", response_model=schemas.CCESyncResponse)
+def trigger_cce_sync(db: Session = Depends(get_db)):
+    result = cce_service.sync_cce_data(db)
+    return schemas.CCESyncResponse(
+        success=result["success"],
+        message=result["message"],
+        events_imported=result["events_imported"],
+        events_updated=result["events_updated"],
+        total_events=result["total_events"],
+        upcoming_events=result["upcoming_events"],
+        past_events=result["past_events"],
+        last_synced_at=result["last_synced_at"],
+        source_url=result["source_url"]
+    )
+
+@app.get("/api/sync/status")
+def get_cce_sync_status(db: Session = Depends(get_db)):
+    settings = db.query(UserSettings).first()
+    today_str = date.today().strftime("%Y-%m-%d")
+    total = db.query(ClubEvent).count()
+    upcoming = db.query(ClubEvent).filter(ClubEvent.date >= today_str).count()
+    past = db.query(ClubEvent).filter(ClubEvent.date < today_str).count()
+    
+    return {
+        "last_synced_at": settings.last_cce_sync if (settings and settings.last_cce_sync) else "Not synced yet",
+        "status": settings.last_sync_status if settings else "Ready",
+        "primary_source": cce_service.CCE_PRIMARY_URL,
+        "ieee_source": cce_service.CCE_IEEE_URL,
+        "total_events": total,
+        "upcoming_events": upcoming,
+        "past_events": past
+    }
 
 # ----------------- CAMPUS DOCUMENTS (RAG) -----------------
 
@@ -575,11 +887,12 @@ def chat_with_agent(chat_in: schemas.AgentChatRequest, db: Session = Depends(get
     return schemas.AgentChatResponse(
         response=result["response"],
         thought_process=result["thought_process"],
-        tool_called=result["tool_called"],
-        tool_input=result["tool_input"],
-        tool_output=result["tool_output"],
-        is_demo=result["is_demo"],
-        verified_sources=result["verified_sources"]
+        tool_called=result.get("tool_called"),
+        tool_input=result.get("tool_input"),
+        tool_output=result.get("tool_output"),
+        is_demo=result.get("is_demo", True),
+        is_error=result.get("is_error", False),
+        verified_sources=result.get("verified_sources", [])
     )
 
 # ----------------- SETTINGS & RESET -----------------
@@ -592,6 +905,10 @@ def get_settings(db: Session = Depends(get_db)):
         db.add(settings)
         db.commit()
         db.refresh(settings)
+        
+    env_key = os.getenv("OPENAI_API_KEY", "") if settings.ai_mode == "openai" else os.getenv("GEMINI_API_KEY", "")
+    has_api_key = bool(settings.api_key or env_key)
+    
     return {
         "student_name": settings.student_name,
         "student_id": settings.student_id,
@@ -599,6 +916,8 @@ def get_settings(db: Session = Depends(get_db)):
         "semester": settings.semester,
         "email": settings.email,
         "ai_mode": settings.ai_mode,
+        "api_key_masked": settings.api_key_masked or ("••••••••" if has_api_key else ""),
+        "has_api_key": has_api_key,
         "is_demo": settings.ai_mode == "demo"
     }
 
@@ -621,12 +940,15 @@ def update_settings(payload: schemas.SettingsUpdate, db: Session = Depends(get_d
         settings.email = payload.email
     if payload.ai_mode is not None:
         settings.ai_mode = payload.ai_mode
-    if payload.api_key:
-        settings.api_key_masked = payload.api_key[:4] + "..." + payload.api_key[-4:]
+        
+    if payload.api_key is not None and payload.api_key.strip():
+        key = payload.api_key.strip()
+        settings.api_key = key
+        settings.api_key_masked = key[:4] + "..." + key[-4:] if len(key) > 8 else "••••••••"
         if settings.ai_mode == "openai":
-            os.environ["OPENAI_API_KEY"] = payload.api_key
+            os.environ["OPENAI_API_KEY"] = key
         elif settings.ai_mode == "gemini":
-            os.environ["GEMINI_API_KEY"] = payload.api_key
+            os.environ["GEMINI_API_KEY"] = key
             
     db.commit()
     return {"success": True, "message": "Settings updated"}
@@ -635,3 +957,100 @@ def update_settings(payload: schemas.SettingsUpdate, db: Session = Depends(get_d
 def reset_campus_data(db: Session = Depends(get_db)):
     seed_database(db, force=True)
     return {"success": True, "message": "Campus database reset to official default state."}
+
+@app.post("/api/clear-sample-data")
+def clear_sample_demo_records(db: Session = Depends(get_db)):
+    res = clear_sample_data(db)
+    return res
+
+# ----------------- NOTIFICATIONS -----------------
+
+@app.get("/api/notifications", response_model=List[schemas.NotificationItem])
+def get_notifications(db: Session = Depends(get_db)):
+    today = date.today()
+    today_str = today.strftime("%Y-%m-%d")
+    near_deadline = (today + timedelta(days=3)).strftime("%Y-%m-%d")
+    exam_window = (today + timedelta(days=14)).strftime("%Y-%m-%d")
+    
+    notifications: List[schemas.NotificationItem] = []
+    
+    # 1. Urgent Deadlines (due today or within 3 days)
+    urgent_tasks = db.query(Task).filter(
+        Task.status != "Completed",
+        Task.due_date <= near_deadline
+    ).order_by(Task.due_date.asc()).limit(3).all()
+    
+    for t in urgent_tasks:
+        if t.due_date < today_str:
+            msg = f"Overdue! Was due on {t.due_date} ({t.course})"
+            prio = "High"
+        elif t.due_date == today_str:
+            msg = f"Due today! ({t.course})"
+            prio = "High"
+        else:
+            try:
+                days_left = (datetime.strptime(t.due_date, "%Y-%m-%d").date() - today).days
+                msg = f"Due in {days_left} days ({t.course})"
+            except Exception:
+                msg = f"Due soon ({t.course})"
+            prio = "Medium"
+            
+        notifications.append(schemas.NotificationItem(
+            id=f"task-{t.id}",
+            title=t.title,
+            message=msg,
+            category="deadline",
+            date=t.due_date,
+            link="/tasks",
+            priority=prio
+        ))
+        
+    # 2. Upcoming Exams (within 14 days)
+    upcoming_exams = db.query(Task).filter(
+        Task.status != "Completed",
+        Task.category == "Exam",
+        Task.due_date >= today_str,
+        Task.due_date <= exam_window
+    ).order_by(Task.due_date.asc()).limit(2).all()
+    
+    for ex in upcoming_exams:
+        notifications.append(schemas.NotificationItem(
+            id=f"exam-{ex.id}",
+            title=f"Upcoming Exam: {ex.title}",
+            message=f"Exam date: {ex.due_date} ({ex.course}) - Start revision roadmap",
+            category="exam",
+            date=ex.due_date,
+            link="/study-planner",
+            priority="High"
+        ))
+        
+    # 3. Official Notices
+    recent_notices = db.query(Notice).order_by(Notice.id.desc()).limit(2).all()
+    for n in recent_notices:
+        notifications.append(schemas.NotificationItem(
+            id=f"notice-{n.id}",
+            title=n.title,
+            message=f"{n.category} circular from {n.source}",
+            category="notice",
+            date=n.date,
+            link="/notices",
+            priority="Normal"
+        ))
+        
+    # 4. Registered Club Events
+    reg_events = db.query(ClubEvent).filter(
+        ClubEvent.is_registered == True,
+        ClubEvent.date >= today_str
+    ).order_by(ClubEvent.date.asc()).limit(2).all()
+    for ev in reg_events:
+        notifications.append(schemas.NotificationItem(
+            id=f"event-{ev.id}",
+            title=f"Event RSVP: {ev.title}",
+            message=f"{ev.date} at {ev.time} @ {ev.venue or ev.location}",
+            category="event",
+            date=ev.date,
+            link="/clubs-events",
+            priority="Normal"
+        ))
+        
+    return notifications
