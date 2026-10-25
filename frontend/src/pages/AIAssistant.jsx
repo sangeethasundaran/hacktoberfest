@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Sparkles, 
   Send, 
@@ -13,8 +13,13 @@ import {
   ChevronUp, 
   BookOpen, 
   ShieldCheck,
-  RotateCcw
+  RotateCcw,
+  CheckSquare,
+  Calendar,
+  Ticket,
+  ArrowRight
 } from 'lucide-react';
+
 
 
 const SUGGESTIONS = [
@@ -48,6 +53,7 @@ export default function AIAssistant() {
   const messagesEndRef = useRef(null);
 
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialPrompt = searchParams.get('prompt');
   const hasAutoFired = useRef(false);
 
@@ -277,7 +283,103 @@ export default function AIAssistant() {
                   ))}
                 </div>
               )}
+
+              {/* Embedded Interactive Action Card */}
+              {msg.tool_called === 'create_task' && msg.tool_output?.task && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '12px',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #DCE5F0',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
+                      <CheckSquare size={16} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#163A63' }}>
+                        {msg.tool_output.task.title}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748B' }}>
+                        Course: {msg.tool_output.task.course} &bull; Due: {msg.tool_output.task.due_date}
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => navigate('/tasks')}
+                    className="btn-secondary"
+                    style={{ padding: '6px 12px', fontSize: '11px', whiteSpace: 'nowrap' }}
+                  >
+                    View in Tasks &rarr;
+                  </button>
+                </div>
+              )}
+
+              {msg.tool_called === 'create_study_plan' && msg.tool_output?.plan_id && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '12px',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #DCE5F0',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '6px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
+                      <Calendar size={16} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#163A63' }}>
+                        {msg.tool_output.subject} Roadmap
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748B' }}>
+                        {msg.tool_output.total_days} Days &bull; Exam: {msg.tool_output.target_exam_date}
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => navigate('/study-planner')}
+                    className="btn-secondary"
+                    style={{ padding: '6px 12px', fontSize: '11px', whiteSpace: 'nowrap' }}
+                  >
+                    Open Roadmap &rarr;
+                  </button>
+                </div>
+              )}
+
+              {msg.tool_called === 'get_upcoming_events' && (
+                <div style={{ marginTop: '12px' }}>
+                  <button 
+                    onClick={() => navigate('/clubs-events')}
+                    className="btn-secondary"
+                    style={{ padding: '6px 12px', fontSize: '11px' }}
+                  >
+                    Browse Campus Clubs & Events &rarr;
+                  </button>
+                </div>
+              )}
+
+              {msg.tool_called === 'search_campus_documents' && (
+                <div style={{ marginTop: '12px' }}>
+                  <button 
+                    onClick={() => navigate('/campus-info')}
+                    className="btn-secondary"
+                    style={{ padding: '6px 12px', fontSize: '11px' }}
+                  >
+                    View Campus Knowledge Base &rarr;
+                  </button>
+                </div>
+              )}
             </div>
+
 
             {/* Step-by-Step Agent Thought Process Accordion */}
             {msg.thought_process && msg.thought_process.length > 0 && (
