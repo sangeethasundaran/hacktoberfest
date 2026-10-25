@@ -13,13 +13,15 @@ import {
   Sparkles,
   ChevronRight,
   Flame,
-  Check
+  Check,
+  Copy
 } from 'lucide-react';
 
 export default function StudyPlanner() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
   
   // New Plan Form State
   const [subject, setSubject] = useState('');
@@ -71,6 +73,14 @@ export default function StudyPlanner() {
     }
     return () => clearInterval(interval);
   }, [timerRunning, timeLeft, timerDuration]);
+
+  const handleCopyPlan = (plan) => {
+    const text = `Study Roadmap: ${plan.subject}\nTarget Exam: ${plan.target_exam_date} (${plan.daily_hours} hrs/day)\n\nDaily Milestones:\n` +
+      plan.milestones.map(m => `Day ${m.day} (${m.date}): ${m.topic} [${m.completed ? 'Completed' : 'Pending'}]`).join('\n');
+    navigator.clipboard.writeText(text);
+    setCopiedId(plan.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const handleCreatePlan = async (e) => {
     e.preventDefault();
@@ -334,6 +344,15 @@ export default function StudyPlanner() {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button
+                    onClick={() => handleCopyPlan(plan)}
+                    className="btn-secondary"
+                    style={{ padding: '6px 12px', fontSize: '12px' }}
+                    title="Copy Roadmap to Clipboard"
+                  >
+                    {copiedId === plan.id ? <Check size={14} color="#166534" /> : <Copy size={14} />}
+                    <span>{copiedId === plan.id ? "Copied!" : "Copy Plan"}</span>
+                  </button>
+                  <button
                     onClick={() => handleDeletePlan(plan.id)}
                     className="btn-secondary"
                     style={{ padding: '6px 10px', color: '#991B1B' }}
@@ -342,6 +361,7 @@ export default function StudyPlanner() {
                     <Trash2 size={14} />
                   </button>
                 </div>
+
               </div>
 
               {/* Progress Bar */}

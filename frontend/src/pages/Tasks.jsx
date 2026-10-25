@@ -18,6 +18,7 @@ export default function Tasks() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('dueAsc');
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
 
@@ -113,6 +114,17 @@ export default function Tasks() {
     );
   });
 
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    if (sortBy === 'dueAsc') return a.due_date.localeCompare(b.due_date);
+    if (sortBy === 'dueDesc') return b.due_date.localeCompare(a.due_date);
+    if (sortBy === 'priority') {
+      const pWeights = { 'High': 3, 'Medium': 2, 'Low': 1 };
+      return (pWeights[b.priority] || 0) - (pWeights[a.priority] || 0);
+    }
+    if (sortBy === 'course') return a.course.localeCompare(b.course);
+    return 0;
+  });
+
   const todayStr = new Date().toISOString().split('T')[0];
   const pendingCount = tasks.filter((t) => t.status !== 'Completed').length;
   const highPriorityCount = tasks.filter((t) => t.priority === 'High' && t.status !== 'Completed').length;
@@ -175,7 +187,7 @@ export default function Tasks() {
           />
         </div>
 
-        {/* Filter Controls */}
+        {/* Filter & Sort Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>Status:</span>
@@ -208,6 +220,21 @@ export default function Tasks() {
               <option value="Admin">Admin</option>
             </select>
           </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>Sort by:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="form-select"
+              style={{ width: 'auto', padding: '6px 12px' }}
+            >
+              <option value="dueAsc">Due Date (Earliest)</option>
+              <option value="dueDesc">Due Date (Latest)</option>
+              <option value="priority">Priority (High to Low)</option>
+              <option value="course">Course Code</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -217,12 +244,13 @@ export default function Tasks() {
           <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
             Loading tasks...
           </div>
-        ) : filteredTasks.length === 0 ? (
+        ) : sortedTasks.length === 0 ? (
           <div className="campus-card" style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
             No matching tasks found.
           </div>
         ) : (
-          filteredTasks.map((task) => {
+          sortedTasks.map((task) => {
+
             const isCompleted = task.status === 'Completed';
             const isOverdue = !isCompleted && task.due_date < todayStr;
             const isDueToday = !isCompleted && task.due_date === todayStr;

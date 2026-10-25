@@ -337,7 +337,7 @@ export default function Dashboard() {
 
           <button 
             className="btn-primary"
-            onClick={() => navigate('/assistant')}
+            onClick={() => navigate(`/assistant?prompt=${encodeURIComponent("Help me act on this recommendation: " + stats.ai_recommendation.recommendation)}`)}
           >
             Ask CampusMate <ArrowRight size={15} />
           </button>

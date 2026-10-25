@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Sparkles, 
   Send, 
@@ -14,6 +15,7 @@ import {
   ShieldCheck,
   RotateCcw
 } from 'lucide-react';
+
 
 const SUGGESTIONS = [
   "What assignments do I have due this week?",
@@ -45,6 +47,10 @@ export default function AIAssistant() {
   const [expandedToolId, setExpandedToolId] = useState(null);
   const messagesEndRef = useRef(null);
 
+  const [searchParams] = useSearchParams();
+  const initialPrompt = searchParams.get('prompt');
+  const hasAutoFired = useRef(false);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -52,6 +58,13 @@ export default function AIAssistant() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isProcessing]);
+
+  useEffect(() => {
+    if (initialPrompt && initialPrompt.trim() && !hasAutoFired.current) {
+      hasAutoFired.current = true;
+      handleSend(initialPrompt);
+    }
+  }, [initialPrompt]);
 
   const handleSend = async (userQuery) => {
     const query = userQuery || input;
