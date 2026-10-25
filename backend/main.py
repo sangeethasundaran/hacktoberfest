@@ -387,6 +387,42 @@ def search_documents(query_payload: Dict[str, str], db: Session = Depends(get_db
     query = query_payload.get("query", "")
     return tools.tool_search_documents(db, query)
 
+@app.post("/api/documents/{doc_id}/ask")
+def ask_document(doc_id: int, payload: Dict[str, str], db: Session = Depends(get_db)):
+    doc = db.query(CampusDocument).filter(CampusDocument.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    question = payload.get("question", "").strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Question is required")
+        
+    paragraphs = [p.strip() for p in doc.content.split("\n\n") if p.strip()]
+    q_words = [w.lower() for w in question.split() if len(w) > 2]
+    
+    scored = []
+    for p in paragraphs:
+        score = sum(p.lower().count(w) for w in q_words)
+        if score > 0:
+            scored.append((score, p))
+            
+    scored.sort(key=lambda x: x[0], reverse=True)
+    if scored:
+        best_p = scored[0][1]
+        answer = f"According to the official {doc.title}:\n\n{best_p}"
+    else:
+        answer = f"According to {doc.title}:\n\n{doc.summary}"
+        best_p = doc.summary
+
+    return {
+        "success": True,
+        "document_id": doc.id,
+        "document_title": doc.title,
+        "question": question,
+        "answer": answer,
+        "snippet": best_p,
+        "source_file": doc.source_file or f"{doc.title}.pdf"
+    }
+
 @app.post("/api/documents/upload")
 async def upload_document(
     file: UploadFile = File(...),

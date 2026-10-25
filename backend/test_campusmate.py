@@ -83,3 +83,20 @@ def test_study_plan_generation():
     plan = res.json()
     assert plan["subject"] == "Algorithm Analysis"
     assert len(plan["milestones"]) > 0
+
+def test_ask_specific_document():
+    # Fetch first document
+    docs_res = client.get("/api/documents")
+    assert docs_res.status_code == 200
+    docs = docs_res.json()
+    assert len(docs) > 0
+    doc_id = docs[0]["id"]
+
+    # Ask document a targeted question
+    ask_res = client.post(f"/api/documents/{doc_id}/ask", json={"question": "What are the rules and penalties?"})
+    assert ask_res.status_code == 200
+    data = ask_res.json()
+    assert data["success"] is True
+    assert "answer" in data
+    assert "snippet" in data
+

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
   Search, 
@@ -10,10 +10,14 @@ import {
   Sparkles, 
   X,
   FileCheck2,
-  FolderOpen
+  FolderOpen,
+  Send,
+  HelpCircle,
+  MessageSquare
 } from 'lucide-react';
 
 export default function CampusInfo() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
 
@@ -24,11 +28,17 @@ export default function CampusInfo() {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
+  // Ask Document state
+  const [docQuestion, setDocQuestion] = useState('');
+  const [docAnswer, setDocAnswer] = useState(null);
+  const [isAskingDoc, setIsAskingDoc] = useState(false);
+
   // Upload modal state
   const [docTitle, setDocTitle] = useState('');
   const [docCategory, setDocCategory] = useState('Academic Policy');
   const [docFile, setDocFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+
 
   const fetchDocuments = async () => {
     try {
@@ -71,6 +81,27 @@ export default function CampusInfo() {
       console.error(err);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleAskDocument = async (e) => {
+    e.preventDefault();
+    if (!docQuestion.trim() || !selectedDoc) return;
+    setIsAskingDoc(true);
+    try {
+      const res = await fetch(`/api/documents/${selectedDoc.id}/ask`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: docQuestion })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDocAnswer(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsAskingDoc(false);
     }
   };
 
@@ -286,7 +317,11 @@ export default function CampusInfo() {
 
       {/* Modal: Document Detail */}
       {selectedDoc && (
-        <div className="modal-overlay" onClick={() => setSelectedDoc(null)}>
+        <div className="modal-overlay" onClick={() => {
+          setSelectedDoc(null);
+          setDocAnswer(null);
+          setDocQuestion('');
+        }}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ padding: '28px', maxWidth: '700px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
@@ -299,12 +334,17 @@ export default function CampusInfo() {
                 </div>
               </div>
               <button
-                onClick={() => setSelectedDoc(null)}
+                onClick={() => {
+                  setSelectedDoc(null);
+                  setDocAnswer(null);
+                  setDocQuestion('');
+                }}
                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748B' }}
               >
                 <X size={20} />
               </button>
             </div>
+
 
             {/* AI Summary */}
             <div style={{
@@ -326,18 +366,81 @@ export default function CampusInfo() {
               border: '1px solid #DCE5F0',
               borderRadius: '8px',
               padding: '16px',
-              maxHeight: '360px',
+              maxHeight: '260px',
               overflowY: 'auto',
               fontSize: '13px',
               lineHeight: 1.6,
               color: '#172B4D',
-              whiteSpace: 'pre-wrap'
+              whiteSpace: 'pre-wrap',
+              marginBottom: '18px'
             }}>
               {selectedDoc.content}
+            </div>
+
+            {/* Interactive Ask This Document Section */}
+            <div style={{
+              borderTop: '1px solid #DCE5F0',
+              paddingTop: '18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: '14px', fontWeight: '700', color: '#163A63', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Sparkles size={16} color="#2563EB" /> Ask CampusMate About This Document
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/assistant?prompt=${encodeURIComponent(`According to the official ${selectedDoc.title}: what are the key requirements?`)}`)}
+                  className="btn-tertiary"
+                  style={{ padding: '2px 6px', fontSize: '11px' }}
+                >
+                  Open in AI Assistant &rarr;
+                </button>
+              </div>
+
+              <form onSubmit={handleAskDocument} style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  placeholder="Ask a question (e.g. 'What is the attendance condonation criteria?')..."
+                  value={docQuestion}
+                  onChange={(e) => setDocQuestion(e.target.value)}
+                  className="form-input"
+                  style={{ fontSize: '13px' }}
+                />
+                <button 
+                  type="submit" 
+                  disabled={isAskingDoc || !docQuestion.trim()} 
+                  className="btn-primary"
+                  style={{ padding: '8px 14px', fontSize: '13px', whiteSpace: 'nowrap' }}
+                >
+                  <Send size={14} /> {isAskingDoc ? "Searching..." : "Ask Document"}
+                </button>
+              </form>
+
+              {docAnswer && (
+                <div style={{
+                  backgroundColor: '#DDF5E5',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  fontSize: '13px',
+                  color: '#166534',
+                  lineHeight: 1.5
+                }}>
+                  <div style={{ fontWeight: '700', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldCheck size={14} /> Grounded Answer ({docAnswer.source_file}):
+                  </div>
+                  <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                    {docAnswer.answer}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+
 
       {/* Modal: Ingest New Document */}
       {showUploadModal && (
