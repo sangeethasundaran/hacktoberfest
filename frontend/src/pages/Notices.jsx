@@ -201,7 +201,7 @@ export default function Notices() {
           filteredNotices.map((notice) => (
             <div
               key={notice.id}
-              className="campus-card"
+              className="campus-card card-interactive"
               style={{
                 display: 'flex',
                 flexDirection: 'column',

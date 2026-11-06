@@ -455,17 +455,18 @@ export default function Tasks() {
             return (
               <div
                 key={task.id}
+                className="card-interactive"
                 style={{
                   backgroundColor: isCompleted ? '#F8FAFC' : '#FFFFFF',
-                  border: '1px solid #DCE5F0',
+                  border: isDueToday ? '1px solid #FDE68A' : (isOverdue ? '1px solid #FECACA' : '1px solid #DCE5F0'),
+                  borderLeft: isOverdue ? '4px solid #DC2626' : (isDueToday ? '4px solid #D97706' : (isCompleted ? '4px solid #CBD5E1' : '4px solid #2563EB')),
                   borderRadius: '10px',
                   padding: '14px 18px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '16px',
-                  boxShadow: 'var(--shadow-xs)',
-                  transition: 'border-color 0.15s ease'
+                  boxShadow: 'var(--shadow-xs)'
                 }}
               >
                 {/* Left: Checkbox & Info */}

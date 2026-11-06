@@ -317,7 +317,7 @@ export default function StudyPlanner() {
           </div>
         ) : (
           plans.map((plan) => (
-            <div key={plan.id} className="campus-card" style={{ padding: '22px' }}>
+            <div key={plan.id} className="campus-card card-interactive" style={{ padding: '22px' }}>
               {/* Header */}
               <div style={{
                 display: 'flex',

@@ -27,14 +27,14 @@ Students can ask questions in natural language, manage assignments, organize dea
      - `get_upcoming_events`: Retrieve hackathons, tech talks, and club meetups.
      - `generate_smart_recommendations`: Daily contextual academic guidance.
 
-2. **Dashboard Overview**:
-   - Time-sensitive greeting ("Good morning / afternoon / evening!").
-   - 4 Live Statistics Cards calculated directly from SQLite (Pending Tasks, Upcoming Exams, Completed Tasks, Upcoming Events).
-   - Interactive Today's Schedule timeline with completion toggles and one-click `.ics` calendar export.
-   - Upcoming Deadlines tracker sorted by due date with urgency badges (Overdue, Due Today, Due Soon, Completed).
-   - AI Academic Recommendation Card with one-click "Ask CampusMate" action.
-   - Weekly Study Velocity (BarChart) and Course Workload (AreaChart) visualized with Recharts.
-   - Quick action shortcuts.
+2. **Campus-Inspired Dashboard & Christ College Hero**:
+   - **Authentic Campus Imagery**: Integrates verified photography of **Christ College of Engineering, Autonomous, Irinjalakuda** (St. Mary's Block) with a soft navy-blue gradient overlay (`rgba(22, 58, 99, 0.93)` to `rgba(37, 99, 235, 0.80)`).
+   - **Local Asset Independence**: Self-contained local image storage in `frontend/public/christ-college-campus.jpg` and `frontend/public/cce-logo.png` ensuring fast load times and zero dependency on external image hosts.
+   - **Personalized SaaS Hero Banner**: Displays dynamic time-of-day student greetings, autonomous portal status, department affiliations, and quick action buttons (`+ Add Task`, `Ask CampusMate AI`, `Add Block`, `Import File`).
+   - **Integrated RAG Prompt Bar**: Quick question input grounded directly in campus regulations (such as the minimum 75% attendance rule and KTU guidelines).
+   - **4 Live Metric Cards**: Elevated cards with colored left accent borders (`Pending Tasks`, `Upcoming Deadlines`, `College Events`, `Study Progress`) and smooth hover micro-animations (`.card-interactive`).
+   - **Interactive Today's Schedule**: Daily timeline with completion toggles and one-click `.ics` calendar export.
+   - **Weekly Study Velocity**: Visualized scheduled vs actual study hours across Monday to Sunday using Recharts.
 
 3. **Adaptive Study Planner**:
    - Dynamic study roadmap generator based on target exam dates and daily hours commitment.
