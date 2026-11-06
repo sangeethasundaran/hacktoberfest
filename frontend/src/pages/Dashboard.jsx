@@ -222,78 +222,167 @@ export default function Dashboard() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* =========================================================================
-          TOP SECTION: Welcome & Campus Info Card
+          CAMPUS-INSPIRED HERO SECTION (Authentic Christ College background + navy overlay)
           ========================================================================= */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '16px',
-        alignItems: 'stretch'
-      }}>
-        {/* Welcome Card */}
-        <div className="campus-card" style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <h1 style={{ fontSize: '23px', fontWeight: '800', color: '#163A63', marginBottom: '6px' }}>
-              {greeting}, {studentName}!
-            </h1>
-            <p style={{ color: '#64748B', fontSize: '13.5px', lineHeight: 1.5, margin: 0 }}>
-              Here is your academic snapshot and prioritized schedule grounded directly in your database.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '18px', flexWrap: 'wrap' }}>
-            <button className="btn-primary" onClick={() => setShowTaskModal(true)}>
-              <Plus size={15} /> Add Task
-            </button>
-            <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
-              <Upload size={14} /> Import File
-            </button>
-            <button className="btn-secondary" onClick={() => setShowScheduleModal(true)}>
-              <Calendar size={14} /> Add Block
-            </button>
-          </div>
-        </div>
-
-        {/* Compact Campus Information Card */}
-        <div className="campus-card" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderLeft: '4px solid #2563EB' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Building size={15} color="#2563EB" />
-                <span style={{ fontSize: '12px', fontWeight: '700', color: '#163A63', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Christ College of Engineering (Autonomous)
-                </span>
+      <div className="dashboard-hero">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Top Row: College & Brand Badges */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div className="hero-badge">
+                <img 
+                  src="/cce-logo.png" 
+                  alt="Christ College Crest" 
+                  style={{ width: '18px', height: '18px', objectFit: 'contain' }} 
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <Building size={14} color="#93C5FD" />
+                <span>Christ College of Engineering (Autonomous), Irinjalakuda</span>
               </div>
-              <span className="badge badge-success" style={{ fontSize: '10.5px' }}>
-                Verified Portal
+              <span style={{
+                backgroundColor: 'rgba(22, 101, 52, 0.4)',
+                border: '1px solid rgba(134, 239, 172, 0.4)',
+                color: '#BBF7D0',
+                padding: '4px 10px',
+                borderRadius: '9999px',
+                fontSize: '11px',
+                fontWeight: '600',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#4ADE80', display: 'inline-block' }} />
+                Autonomous Portal &bull; KTU Affiliated
               </span>
             </div>
 
-            <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0 12px 0', lineHeight: 1.45 }}>
-              Department of {userSettings?.major || 'Computer Science & Engineering'} &bull; {userSettings?.semester || 'Semester 5'}
-            </p>
-
-            <div style={{ fontSize: '12.5px', color: '#172B4D', backgroundColor: '#EFF6FF', padding: '10px 12px', borderRadius: '8px', border: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Info size={15} color="#2563EB" style={{ flexShrink: 0 }} />
-              <span>Official circulars, attendance thresholds (75%), and exam guidelines are indexed.</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '12px', color: '#BFDBFE', fontWeight: '500' }}>
+                Dept. of {userSettings?.major || 'Computer Science & Engineering'} &bull; {userSettings?.semester || 'Semester 5'}
+              </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #DCE5F0' }}>
-            <span style={{ fontSize: '12px', color: '#64748B' }}>Source: cce.edu.in</span>
-            <button 
-              onClick={() => navigate('/campus-info')}
-              className="btn-tertiary"
-              style={{ padding: 0, fontSize: '12px' }}
-            >
-              Search Regulations &rarr;
-            </button>
+          {/* Main Hero Content: Greeting, Subtitle, and Quick Prompts/Actions */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', alignItems: 'center' }}>
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#93C5FD', fontSize: '12.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+                <Sparkles size={16} /> CampusMate AI Workspace
+              </div>
+              <h1 style={{ fontSize: '27px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '-0.02em', lineHeight: 1.25, margin: 0 }}>
+                {greeting}, {studentName}!
+              </h1>
+              <p style={{ color: '#E2E8F0', fontSize: '14px', lineHeight: 1.55, marginTop: '8px', marginBottom: '20px', maxWidth: '580px', opacity: 0.95 }}>
+                Your unified campus productivity platform. Seamlessly track academic deadlines, syllabus milestones, and autonomous college regulations at Christ College of Engineering.
+              </p>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <button 
+                  className="hero-btn-primary"
+                  onClick={() => setShowTaskModal(true)}
+                >
+                  <Plus size={16} /> Add Task
+                </button>
+                <button 
+                  className="hero-btn-secondary"
+                  onClick={() => navigate('/assistant')}
+                >
+                  <Sparkles size={15} color="#93C5FD" /> Ask CampusMate AI
+                </button>
+                <button 
+                  className="hero-btn-secondary"
+                  onClick={() => setShowScheduleModal(true)}
+                >
+                  <Calendar size={15} /> Add Block
+                </button>
+                <button 
+                  className="hero-btn-secondary"
+                  onClick={() => setShowImportModal(true)}
+                  title="Import Syllabus or Timetable"
+                >
+                  <Upload size={14} /> Import File
+                </button>
+              </div>
+            </div>
+
+            {/* Quick AI Search & Regulation Snippet inside Hero */}
+            <div style={{
+              backgroundColor: 'rgba(15, 39, 68, 0.45)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              borderRadius: '14px',
+              padding: '18px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: '#BFDBFE', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Sparkles size={14} color="#60A5FA" /> Quick Campus Assistant
+                </span>
+                <span style={{ fontSize: '11px', color: '#93C5FD' }}>
+                  RAG Knowledgebase Online
+                </span>
+              </div>
+
+              <form onSubmit={handleQuickPromptSubmit} style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  placeholder="Ask about attendance rules, exam dates, or assignments..."
+                  value={quickPrompt}
+                  onChange={(e) => setQuickPrompt(e.target.value)}
+                  className="hero-quick-input"
+                />
+                <button
+                  type="submit"
+                  style={{
+                    backgroundColor: '#2563EB',
+                    border: 'none',
+                    borderRadius: '10px',
+                    color: '#FFFFFF',
+                    padding: '0 16px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background-color 0.15s ease'
+                  }}
+                  title="Submit prompt to AI"
+                >
+                  <Send size={15} />
+                </button>
+              </form>
+
+              {/* Verified Regulations Quick Note */}
+              <div style={{
+                fontSize: '11.5px',
+                color: '#E2E8F0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingTop: '6px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.12)'
+              }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Info size={13} color="#93C5FD" /> Minimum 75% attendance rule & KTU exam guidelines indexed
+                </span>
+                <span 
+                  onClick={() => navigate('/campus-info')}
+                  style={{ color: '#93C5FD', fontWeight: '600', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap' }}
+                >
+                  Regulations &rarr;
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* =========================================================================
-          OVERVIEW CARDS (4 Compact Metrics)
+          OVERVIEW CARDS (4 Compact Metrics with Micro-Interactions)
           ========================================================================= */}
       <div style={{
         display: 'grid',
@@ -302,9 +391,9 @@ export default function Dashboard() {
       }}>
         {/* 1. Pending Assignments */}
         <div 
-          className="campus-card" 
+          className="campus-card card-interactive" 
           onClick={() => navigate('/tasks')}
-          style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px' }}
+          style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px', borderLeft: '4px solid #2563EB' }}
         >
           <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB', flexShrink: 0 }}>
             <CheckSquare size={22} />
@@ -324,9 +413,9 @@ export default function Dashboard() {
 
         {/* 2. Upcoming Deadlines */}
         <div 
-          className="campus-card" 
+          className="campus-card card-interactive" 
           onClick={() => navigate('/tasks')}
-          style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px' }}
+          style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px', borderLeft: '4px solid #D97706' }}
         >
           <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D97706', flexShrink: 0 }}>
             <Clock size={22} />
@@ -346,9 +435,9 @@ export default function Dashboard() {
 
         {/* 3. College Events */}
         <div 
-          className="campus-card" 
+          className="campus-card card-interactive" 
           onClick={() => navigate('/clubs-events')}
-          style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px' }}
+          style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px', borderLeft: '4px solid #16A34A' }}
         >
           <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#166534', flexShrink: 0 }}>
             <Users size={22} />
@@ -368,9 +457,9 @@ export default function Dashboard() {
 
         {/* 4. Study Progress */}
         <div 
-          className="campus-card" 
+          className="campus-card card-interactive" 
           onClick={() => navigate('/study-planner')}
-          style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px' }}
+          style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '16px', borderLeft: '4px solid #1E40AF' }}
         >
           <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1E40AF', flexShrink: 0 }}>
             <GraduationCap size={22} />

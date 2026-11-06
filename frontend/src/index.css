@@ -134,12 +134,22 @@ p, label {
   border-radius: var(--radius-md);
   padding: 20px 24px;
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .campus-card:hover {
   border-color: #CBD5E1;
   box-shadow: var(--shadow-md);
+}
+
+.card-interactive {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.15s ease;
+}
+
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: #CBD5E1;
 }
 
 .campus-card-flat {
@@ -148,6 +158,132 @@ p, label {
   border-radius: var(--radius-md);
   padding: 18px 20px;
 }
+
+/* ==========================================================================
+   Dashboard Hero Section with Christ College of Engineering Campus Photo
+   ========================================================================== */
+.dashboard-hero {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background-image: 
+    linear-gradient(135deg, rgba(22, 58, 99, 0.93) 0%, rgba(15, 39, 68, 0.88) 55%, rgba(37, 99, 235, 0.80) 100%),
+    url('/christ-college-campus.jpg');
+  background-size: cover;
+  background-position: center 32%;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 12px 32px rgba(15, 39, 68, 0.14), 0 2px 6px rgba(15, 39, 68, 0.08);
+  color: #FFFFFF;
+  padding: 32px 36px;
+  transition: box-shadow 0.2s ease;
+}
+
+.dashboard-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%);
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .dashboard-hero {
+    padding: 22px 20px;
+    background-position: center 25%;
+  }
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+  border-radius: var(--radius-full);
+  padding: 5px 14px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.hero-btn-primary {
+  background-color: #FFFFFF;
+  color: #163A63;
+  border: 1px solid #FFFFFF;
+  border-radius: var(--radius-sm);
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-btn-primary:hover {
+  background-color: #F8FAFC;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.24);
+}
+
+.hero-btn-secondary {
+  background-color: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.hero-quick-input {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  padding: 10px 16px;
+  color: #FFFFFF;
+  font-size: 13.5px;
+  outline: none;
+  width: 100%;
+  transition: all 0.15s ease;
+}
+
+.hero-quick-input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.hero-quick-input:focus {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+}
+
 
 /* Action Buttons */
 .btn-primary {
